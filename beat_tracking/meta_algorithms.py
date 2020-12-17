@@ -59,6 +59,7 @@ def kick_snare(prog):
 
 def percussive(prog):
     _, xp = ihpss(prog.x, prog)
+    prog.xp = xp
 
     # need a consensus across all algorithms
     all_beats = numpy.array([])

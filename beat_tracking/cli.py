@@ -5,6 +5,7 @@ import numpy
 import librosa
 from madmom.io.audio import load_audio_file, write_wave_file
 from .meta_algorithms import apply_meta_algorithm
+from .onset_align import OnsetAligner
 
 INTRO = """
 Beat tracking
@@ -37,6 +38,7 @@ class BeatTrackingCli:
         self.pool = multiprocessing.Pool(args.n_pool)
 
         self.x = load_wav(args.wav_in)
+        self.xp = None
 
         # here's where i could parameter check
         # if i cared
@@ -59,6 +61,10 @@ class BeatTrackingCli:
         self.slow_attack_ms = args.slow_attack_ms
         self.release_ms = args.release_ms
         self.power_memory_ms = args.power_memory_ms
+
+        # onset alignment params
+        self.onset_align = args.align_onsets
+        self.onset_silence_threshold = args.onset_silence_threshold
 
 
 def main():
@@ -132,6 +138,12 @@ def main():
         default=0.33,
         help="How many (out of the maximum possible) beat locations should agree",
     )
+    parser.add_argument(
+        "--align-onsets", action="store_true", help="Align beats with onsets"
+    )
+    parser.add_argument(
+        "--onset-silence-threshold", type=float, default=0.05, help="Silence threshold"
+    )
 
     parser.add_argument("wav_in", help="input wav file")
     parser.add_argument("wav_out", help="output wav file")
@@ -141,6 +153,14 @@ def main():
 
     prog = BeatTrackingCli(args)
     beats = apply_meta_algorithm(prog)
+
+    if prog.onset_align:
+        if prog.xp is None:
+            # get a percussive separation for onset alignment
+            _, prog.xp = ihpss(prog.x)
+
+        oa = OnsetAligner(prog.onset_silence_threshold)
+        beats = oa.align_beats(beats, prog)
 
     clicks = librosa.clicks(beats, sr=44100, length=len(prog.x))
     write_wav(args.wav_out, prog.x + clicks)
