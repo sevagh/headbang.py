@@ -148,7 +148,9 @@ def ihpss(x, prog):
         win_length=prog.harmonic_frame,
         hop_length=int(prog.harmonic_frame // 2),
     )
-    S_h1, S_p1 = hpss(S1, margin=prog.harmonic_beta, power=numpy.inf)  # hard mask
+    S_h1, S_p1 = hpss(
+        S1, margin=prog.harmonic_beta, power=numpy.inf
+    )  # hard mask
     S_r1 = S1 - (S_h1 + S_p1)
 
     yh = fix_length(istft(S_h1, dtype=x.dtype), len(x))

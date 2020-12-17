@@ -125,25 +125,25 @@ def main():
         "--n-pool",
         type=int,
         default=multiprocessing.cpu_count() - 1,
-        help="How many threads to use in multiprocessing pool (default = thread count - 1)",
+        help="How many threads to use in multiprocessing pool",
     )
     parser.add_argument(
         "--beat-near-threshold",
         type=float,
-        default=0.0116,
-        help="How close beats should be in seconds to be considered the same beat (default 0.0116, 11.6ms)",
+        default=0.05,
+        help="How close beats should be in seconds to be considered the same beat",
     )
     parser.add_argument(
         "--consensus-ratio",
         type=float,
-        default=0.33,
+        default=0.25,
         help="How many (out of the maximum possible) beat locations should agree",
     )
     parser.add_argument(
         "--align-onsets", action="store_true", help="Align beats with onsets"
     )
     parser.add_argument(
-        "--onset-silence-threshold", type=float, default=0.035, help="Silence threshold"
+        "--onset-silence-threshold", type=float, default=0.05, help="Silence threshold"
     )
 
     parser.add_argument("wav_in", help="input wav file")
@@ -158,7 +158,7 @@ def main():
     if prog.onset_align:
         if prog.xp is None:
             # get a percussive separation for onset alignment
-            _, prog.xp = ihpss(prog.x)
+            _, prog.xp = ihpss(prog.x, prog)
 
         oa = OnsetAligner(prog.onset_silence_threshold)
         beats = oa.align_beats(beats, prog)

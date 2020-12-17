@@ -1,3 +1,9 @@
+# best params
+
+```
+sevagh:beat-tracking $ beat-tracking --meta-algorithm 1 ./anup_sastry_origin.wav ./anup_sastry_origin_beats.wav --shape-transients --align-onsets --harmonic-beta 3.0 --percussive-beta 3.0
+```
+
 # beat-tracking
 
 A wacky beat-tracking toolbox.

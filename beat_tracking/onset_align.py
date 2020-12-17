@@ -10,7 +10,7 @@ import essentia
 import itertools
 import numpy
 
-ODF = ["hfc", "complex", "complex_phase", "flux", "melflux", "rms"]
+ODF = ["hfc", "complex", "flux", "rms"]
 ONSET_DETECTORS = [OnsetDetection(method=f) for f in ODF]
 
 w = Windowing(type="hann")
@@ -36,9 +36,6 @@ class OnsetAligner:
 
         # evenly weight all ODF functions for now
         self.weights = numpy.ones(len(ODF))
-
-        # actually, weight hfc more for being more aligned with percussion
-        self.weights[0] = 2.0
 
     def align_beats(self, beats, prog):
         # Computing onset detection functions.
@@ -70,7 +67,8 @@ class OnsetAligner:
             curr_beat = beats[j]
 
             if numpy.abs(curr_onset - curr_beat) <= prog.beat_near_threshold:
-                aligned_beats.append(min(curr_beat, curr_onset))
+                # always use the onset, not the beat
+                aligned_beats.append(curr_onset)
                 i += 1
                 j += 1
                 continue
