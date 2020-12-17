@@ -26,6 +26,30 @@ def apply_single_odf(odf_idx, frame):
     return ONSET_DETECTORS[odf_idx](mag, phase)
 
 
+def align_with_thresh(beats, onsets, thresh):
+    i = 0
+    j = 0
+
+    aligned_beats = []
+    while i < len(onsets) and j < len(beats):
+        curr_onset = onsets[i]
+        curr_beat = beats[j]
+
+        if numpy.abs(curr_onset - curr_beat) <= thresh:
+            aligned_beats.append((curr_onset + curr_beat) / 2)
+            i += 1
+            j += 1
+            continue
+
+        if curr_beat < curr_onset:
+            # increment beats
+            j += 1
+        elif curr_beat > curr_onset:
+            i += 1
+
+    return aligned_beats
+
+
 class OnsetAligner:
     def __init__(self, silence_threshold):
         # cribbed straight from the essentia examples
@@ -58,25 +82,6 @@ class OnsetAligner:
 
         total_onsets = self.onsets(matrix, self.weights)
 
-        i = 0
-        j = 0
+        aligned_whole = align_with_thresh(beats, total_onsets, prog.beat_near_threshold)
 
-        aligned_beats = []
-        while i < len(total_onsets) and j < len(beats):
-            curr_onset = total_onsets[i]
-            curr_beat = beats[j]
-
-            if numpy.abs(curr_onset - curr_beat) <= prog.beat_near_threshold:
-                # always use the onset, not the beat
-                aligned_beats.append(curr_onset)
-                i += 1
-                j += 1
-                continue
-
-            if curr_beat < curr_onset:
-                # increment beats
-                j += 1
-            elif curr_beat > curr_onset:
-                i += 1
-
-        return aligned_beats
+        return aligned_whole

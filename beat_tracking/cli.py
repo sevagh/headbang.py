@@ -46,7 +46,6 @@ class BeatTrackingCli:
 
         # consensus params
         self.beat_tracking_algorithms = [int(x) for x in args.algorithms.split(",")]
-        self.meta_algorithm = args.meta_algorithm
         self.beat_near_threshold = args.beat_near_threshold
         self.consensus_ratio = args.consensus_ratio
 
@@ -82,10 +81,9 @@ def main():
         help="List of beat tracking algorithms to apply",
     )
     parser.add_argument(
-        "--meta-algorithm", type=int, default=1, help="Which meta algorithm to apply"
-    )
-    parser.add_argument(
-        "--dont-shape-transients", action="store_true", help="Don't apply transient enhancing"
+        "--dont-shape-transients",
+        action="store_true",
+        help="Don't apply transient enhancing",
     )
     parser.add_argument(
         "--fast-attack-ms", type=int, default=1, help="Fast attack (ms)"
@@ -136,7 +134,7 @@ def main():
     parser.add_argument(
         "--consensus-ratio",
         type=float,
-        default=0.25,
+        default=0.33,
         help="How many (out of the maximum possible) beat locations should agree",
     )
     parser.add_argument(

@@ -2,6 +2,7 @@ from .beat_tracking import apply_single_beat_tracker
 from .effects import ihpss, bandpass, lowpass
 import numpy
 import itertools
+from essentia.standard import FrameGenerator
 
 
 def get_consensus_beats(all_beats, max_consensus, prog):
@@ -29,58 +30,38 @@ def get_consensus_beats(all_beats, max_consensus, prog):
     return final_beats
 
 
-def kick_snare(prog):
-    # 0-120hz for kick drum
-    kick = lowpass(120, prog.x, 44100)
-
-    # 200-500hz for snare
-    snare = bandpass(200, 500, prog.x, 44100)
-
-    _, xpk = ihpss(kick, prog)
-    _, xps = ihpss(snare, prog)
+# apply beat tracking to the song segmented into chunks
+def chunked_algorithm(prog, chunk_seconds):
+    chunk_samples = int(chunk_seconds * 44100.0)
 
     # need a consensus across all algorithms
     all_beats = numpy.array([])
+    nframes = 0
 
-    # gather all the beats from all beat tracking algorithms
-    beat_results = prog.pool.starmap(
-        apply_single_beat_tracker,
-        itertools.product([xpk, xps], prog.beat_tracking_algorithms),
-    )
+    for frame in FrameGenerator(prog.x, frameSize=chunk_samples, hopSize=chunk_samples):
+        beat_results = prog.pool.starmap(
+            apply_single_beat_tracker,
+            zip(
+                itertools.repeat(prog.x),
+                prog.beat_tracking_algorithms,
+                itertools.repeat(nframes * chunk_seconds),
+            ),
+        )
 
-    for beats in beat_results:
-        all_beats = numpy.concatenate((all_beats, beats))
+        for beats in beat_results:
+            all_beats = numpy.concatenate((all_beats, beats))
 
-    all_beats = numpy.sort(all_beats)
-
-    # consensus across all algos * 2 (kick + snare)
-    return get_consensus_beats(all_beats, 2 * len(prog.beat_tracking_algorithms), prog)
-
-
-def percussive(prog):
-    _, xp = ihpss(prog.x, prog)
-    prog.xp = xp
-
-    # need a consensus across all algorithms
-    all_beats = numpy.array([])
-
-    # gather all the beats from all beat tracking algorithms
-    beat_results = prog.pool.starmap(
-        apply_single_beat_tracker,
-        itertools.product([xp], prog.beat_tracking_algorithms),
-    )
-
-    for beats in beat_results:
-        all_beats = numpy.concatenate((all_beats, beats))
+        nframes += 1
 
     all_beats = numpy.sort(all_beats)
 
     return get_consensus_beats(all_beats, len(prog.beat_tracking_algorithms), prog)
 
 
-def basic(prog):
-    # need a consensus across all algorithms
-    all_beats = numpy.array([])
+def apply_meta_algorithm(prog):
+    #######################
+    # pass 1 - whole song #
+    #######################
 
     # gather all the beats from all beat tracking algorithms
     beat_results = prog.pool.starmap(
@@ -88,20 +69,33 @@ def basic(prog):
         zip(itertools.repeat(prog.x), prog.beat_tracking_algorithms),
     )
 
+    # need a consensus across all algorithms
+    all_beats = numpy.array([])
+
     for beats in beat_results:
         all_beats = numpy.concatenate((all_beats, beats))
 
+    #####################
+    # pass 2 - segments #
+    #####################
+
+    beats_segment_10s = chunked_algorithm(prog, 10.0)
+    beats_segment_5s = chunked_algorithm(prog, 5.0)
+    beats_segment_2s = chunked_algorithm(prog, 2.0)
+
+    print(all_beats)
+
+    # add the segmented beats
+    all_beats = numpy.concatenate((all_beats, beats_segment_10s))
+    all_beats = numpy.concatenate((all_beats, beats_segment_5s))
+    all_beats = numpy.concatenate((all_beats, beats_segment_2s))
+
     all_beats = numpy.sort(all_beats)
+    print(all_beats)
 
-    return get_consensus_beats(all_beats, len(prog.beat_tracking_algorithms), prog)
+    # 2 sets of beats, maximum of 4xalgo consensus (with some extra from the chunks)
+    beat_consensus = get_consensus_beats(
+        all_beats, len(prog.beat_tracking_algorithms), prog
+    )
 
-
-META_ALGOS = {
-    1: basic,
-    2: percussive,
-    3: kick_snare,
-}
-
-
-def apply_meta_algorithm(prog):
-    return META_ALGOS[prog.meta_algorithm](prog)
+    return beat_consensus

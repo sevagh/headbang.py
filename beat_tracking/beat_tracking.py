@@ -66,7 +66,7 @@ BEAT_TRACK_ALGOS = {
 }
 
 
-def apply_single_beat_tracker(x, beat_algo):
+def apply_single_beat_tracker(x, beat_algo, frame_offset=0):
     # global RNN activation for all madmom algorithms
     act = madmom.features.beats.RNNBeatProcessor()(x)
-    return BEAT_TRACK_ALGOS[beat_algo](x, act)
+    return BEAT_TRACK_ALGOS[beat_algo](x, act) + frame_offset
