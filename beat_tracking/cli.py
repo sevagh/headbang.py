@@ -42,7 +42,7 @@ class BeatTrackingCli:
         # if i cared
 
         # consensus params
-        self.beat_tracking_algorithms = [int(x) for x in args.algorithms.split(',')]
+        self.beat_tracking_algorithms = [int(x) for x in args.algorithms.split(",")]
         self.meta_algorithm = args.meta_algorithm
         self.beat_near_threshold = args.beat_near_threshold
         self.consensus_ratio = args.consensus_ratio
@@ -60,9 +60,6 @@ class BeatTrackingCli:
         self.release_ms = args.release_ms
         self.power_memory_ms = args.power_memory_ms
 
-        # chunk params
-        self.chunk_size = args.chunk_size_seconds
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -72,7 +69,10 @@ def main():
     )
 
     parser.add_argument(
-        "--algorithms", type=str, default='1', help="List of beat tracking algorithms to apply"
+        "--algorithms",
+        type=str,
+        default="1,2,3,4,5,6,7,8",
+        help="List of beat tracking algorithms to apply",
     )
     parser.add_argument(
         "--meta-algorithm", type=int, default=1, help="Which meta algorithm to apply"
@@ -91,29 +91,46 @@ def main():
         "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
     )
     parser.add_argument(
-        "--harmonic-beta", type=float, default=2.0, help="Separation margin for HPSS harmonic iteration"
+        "--harmonic-beta",
+        type=float,
+        default=2.0,
+        help="Separation margin for HPSS harmonic iteration",
     )
     parser.add_argument(
-        "--harmonic-frame", type=int, default=4096, help="T-F/frame size for HPSS harmonic iteration"
+        "--harmonic-frame",
+        type=int,
+        default=4096,
+        help="T-F/frame size for HPSS harmonic iteration",
     )
     parser.add_argument(
-        "--percussive-beta", type=float, default=2.0, help="Separation margin for HPSS percussive iteration"
+        "--percussive-beta",
+        type=float,
+        default=2.0,
+        help="Separation margin for HPSS percussive iteration",
     )
     parser.add_argument(
-        "--percussive-frame", type=int, default=256, help="T-F/frame size for HPSS percussive iteration"
+        "--percussive-frame",
+        type=int,
+        default=256,
+        help="T-F/frame size for HPSS percussive iteration",
     )
     parser.add_argument(
-        "--n-pool", type=int, default=multiprocessing.cpu_count()-1, help="How many threads to use in multiprocessing pool (default = thread count - 1)"
-    )
-
-    parser.add_argument(
-        "--chunk-size-seconds", type=float, default=numpy.inf, help="Apply beat tracking to song split into chunks"
-    )
-    parser.add_argument(
-        "--beat-near-threshold", type=float, default=0.05, help="How close beats should be in seconds to be considered the same beat (default 0.05, 50ms)"
+        "--n-pool",
+        type=int,
+        default=multiprocessing.cpu_count() - 1,
+        help="How many threads to use in multiprocessing pool (default = thread count - 1)",
     )
     parser.add_argument(
-        "--consensus-ratio", type=float, default=0.5, help="How many (out of the maximum possible) beat locations should agree"
+        "--beat-near-threshold",
+        type=float,
+        default=0.05,
+        help="How close beats should be in seconds to be considered the same beat (default 0.05, 50ms)",
+    )
+    parser.add_argument(
+        "--consensus-ratio",
+        type=float,
+        default=0.33,
+        help="How many (out of the maximum possible) beat locations should agree",
     )
 
     parser.add_argument("wav_in", help="input wav file")
@@ -126,4 +143,4 @@ def main():
     beats = apply_meta_algorithm(prog)
 
     clicks = librosa.clicks(beats, sr=44100, length=len(prog.x))
-    write_wav(args.wav_out, prog.x+clicks)
+    write_wav(args.wav_out, prog.x + clicks)

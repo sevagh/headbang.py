@@ -36,6 +36,18 @@ FREQ_BANDS = [
 ]
 
 
+def bandpass(lo, hi, x, fs, order=2):
+    nyq = 0.5 * fs
+    b, a = butter(order, [lo / nyq, hi / nyq], btype="band")
+    return lfilter(b, a, x)
+
+
+def lowpass(hi, x, fs, order=2):
+    nyq = 0.5 * fs
+    b, a = butter(order, hi / nyq, btype="low")
+    return lfilter(b, a, x)
+
+
 def envelope(x, fs, params):
     fast_attack = params[0]
     slow_attack = params[1]
@@ -92,13 +104,10 @@ def envelope(x, fs, params):
 
 
 def single_band_transient_shaper(band, x, fs, shaper_params, order=2):
-    nyq = 0.5 * fs
-
     lo = FREQ_BANDS[band]
     hi = FREQ_BANDS[band + 1]
 
-    b, a = butter(order, [lo / nyq, hi / nyq], btype="band")
-    y = lfilter(b, a, x)
+    y = bandpass(lo, hi, x, fs)
 
     # per bark band, apply a differential envelope attack/transient enhancer
     y_shaped = envelope(y, fs, shaper_params)
@@ -133,8 +142,13 @@ def multiband_transient_shaper(x, fs, shaper_params, pool):
 # iterative hpss
 def ihpss(x, prog):
     # big t-f resolution for harmonic
-    S1 = stft(x, n_fft=2*prog.harmonic_frame, win_length=prog.harmonic_frame, hop_length=int(prog.harmonic_frame//2))
-    S_h1, S_p1 = hpss(S1, margin=prog.harmonic_beta, power=numpy.inf) # hard mask
+    S1 = stft(
+        x,
+        n_fft=2 * prog.harmonic_frame,
+        win_length=prog.harmonic_frame,
+        hop_length=int(prog.harmonic_frame // 2),
+    )
+    S_h1, S_p1 = hpss(S1, margin=prog.harmonic_beta, power=numpy.inf)  # hard mask
     S_r1 = S1 - (S_h1 + S_p1)
 
     yh = fix_length(istft(S_h1, dtype=x.dtype), len(x))
@@ -142,13 +156,27 @@ def ihpss(x, prog):
     yr1 = fix_length(istft(S_r1, dtype=x.dtype), len(x))
 
     # small t-f resolution for percussive
-    S2 = stft(yp1+yr1, n_fft=2*prog.percussive_frame, win_length=prog.percussive_frame, hop_length=int(prog.percussive_frame//2))
-    _, S_p2 = hpss(S2, margin=prog.percussive_beta, power=numpy.inf) # hard mask
+    S2 = stft(
+        yp1 + yr1,
+        n_fft=2 * prog.percussive_frame,
+        win_length=prog.percussive_frame,
+        hop_length=int(prog.percussive_frame // 2),
+    )
+    _, S_p2 = hpss(S2, margin=prog.percussive_beta, power=numpy.inf)  # hard mask
 
     yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
 
     if prog.shape_transients:
-        yh = multiband_transient_shaper(yh, 44100, (prog.fast_attack_ms, prog.slow_attack_ms, prog.release_ms, prog.power_memory_ms), prog.pool)
-        yp = multiband_transient_shaper(yp, 44100, (prog.fast_attack_ms, prog.slow_attack_ms, prog.release_ms, prog.power_memory_ms), prog.pool)
+        yp = multiband_transient_shaper(
+            yp,
+            44100,
+            (
+                prog.fast_attack_ms,
+                prog.slow_attack_ms,
+                prog.release_ms,
+                prog.power_memory_ms,
+            ),
+            prog.pool,
+        )
 
     return yh, yp

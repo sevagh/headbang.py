@@ -56,11 +56,9 @@ If multiple algorithms (comma-separated) are specified, **all meta-algorithm aut
 
 | Number | Name | Description |
 |--------|------|-------------|
-| 1      | Basic  | Applies a single algorithm or a consensus of multiple algorithms directly to the mixed song |
-| 2      | Percussive  | Apply a single algorithm or a consensus of multiple algorithms to the percussive output of median-filtering harmonic-percussive source separation |
-| 3      | Harmonic  | Apply a single algorithm or a consensus of multiple algorithms to the harmonic output of median-filtering harmonic-percussive source separation |
-| 4      | Harmonic-percussive consensus  | Apply a single algorithm or a consensus of multiple algorithms to the mix, and percussive and harmonic outputs of median-filtering harmonic-percussive source separation |
-| 5      | Kick-snare percussive consensus | Apply a single algorithm or a consensus of multiple algorithms to the percussion separation of the two frequency bands that contain the kick and snare, i.e. 0-120Hz and 200-500Hz. Concept loosely based on the paper [Percussive Beat tracking using real-time median filtering](http://www.adamstark.co.uk/pdf/papers/percussive-beat-tracking-2013.pdf) |
+| 1      | Basic  | Applies a single or multi-algorithm consensus directly to the mixed song |
+| 2      | Percussive  | Apply a single or multi-algorithm consensus to the percussive output of median-filtering harmonic-percussive source separation |
+| 3      | Kick-snare percussive consensus | Apply a single or multi-algorithm consensus to the percussion separation of the two frequency bands that contain the kick and snare, i.e. 0-120Hz and 200-500Hz. Concept loosely based on the paper [Percussive Beat tracking using real-time median filtering](http://www.adamstark.co.uk/pdf/papers/percussive-beat-tracking-2013.pdf) |
 
 ### Inputs and outputs
 
