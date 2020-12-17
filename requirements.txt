@@ -1,0 +1,7 @@
+numpy
+scipy
+librosa
+simpleaudio
+madmom
+essentia
+matplotlib
