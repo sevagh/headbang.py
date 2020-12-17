@@ -6,6 +6,7 @@ import librosa
 from madmom.io.audio import load_audio_file, write_wave_file
 from .meta_algorithms import apply_meta_algorithm
 from .onset_align import OnsetAligner
+from .effects import ihpss
 
 INTRO = """
 Beat tracking
@@ -129,8 +130,8 @@ def main():
     parser.add_argument(
         "--beat-near-threshold",
         type=float,
-        default=0.05,
-        help="How close beats should be in seconds to be considered the same beat (default 0.05, 50ms)",
+        default=0.0116,
+        help="How close beats should be in seconds to be considered the same beat (default 0.0116, 11.6ms)",
     )
     parser.add_argument(
         "--consensus-ratio",
@@ -142,7 +143,7 @@ def main():
         "--align-onsets", action="store_true", help="Align beats with onsets"
     )
     parser.add_argument(
-        "--onset-silence-threshold", type=float, default=0.05, help="Silence threshold"
+        "--onset-silence-threshold", type=float, default=0.035, help="Silence threshold"
     )
 
     parser.add_argument("wav_in", help="input wav file")

@@ -37,6 +37,9 @@ class OnsetAligner:
         # evenly weight all ODF functions for now
         self.weights = numpy.ones(len(ODF))
 
+        # actually, weight hfc more for being more aligned with percussion
+        self.weights[0] = 2.0
+
     def align_beats(self, beats, prog):
         # Computing onset detection functions.
         for frame in FrameGenerator(prog.xp, frameSize=1024, hopSize=512):
@@ -67,7 +70,7 @@ class OnsetAligner:
             curr_beat = beats[j]
 
             if numpy.abs(curr_onset - curr_beat) <= prog.beat_near_threshold:
-                aligned_beats.append(curr_onset)
+                aligned_beats.append(min(curr_beat, curr_onset))
                 i += 1
                 j += 1
                 continue
