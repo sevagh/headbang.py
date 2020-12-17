@@ -168,7 +168,7 @@ def ihpss(x, prog):
 
     yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
 
-    if prog.shape_transients:
+    if not prog.dont_shape_transients:
         yp = multiband_transient_shaper(
             yp,
             44100,

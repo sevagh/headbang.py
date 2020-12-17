@@ -57,14 +57,14 @@ class BeatTrackingCli:
         self.harmonic_beta = args.harmonic_beta
 
         # transient shaper params
-        self.shape_transients = args.shape_transients
+        self.dont_shape_transients = args.dont_shape_transients
         self.fast_attack_ms = args.fast_attack_ms
         self.slow_attack_ms = args.slow_attack_ms
         self.release_ms = args.release_ms
         self.power_memory_ms = args.power_memory_ms
 
         # onset alignment params
-        self.onset_align = args.align_onsets
+        self.dont_onset_align = args.dont_align_onsets
         self.onset_silence_threshold = args.onset_silence_threshold
 
 
@@ -85,7 +85,7 @@ def main():
         "--meta-algorithm", type=int, default=1, help="Which meta algorithm to apply"
     )
     parser.add_argument(
-        "--shape-transients", action="store_true", help="Apply transient enhancing"
+        "--dont-shape-transients", action="store_true", help="Don't apply transient enhancing"
     )
     parser.add_argument(
         "--fast-attack-ms", type=int, default=1, help="Fast attack (ms)"
@@ -140,10 +140,10 @@ def main():
         help="How many (out of the maximum possible) beat locations should agree",
     )
     parser.add_argument(
-        "--align-onsets", action="store_true", help="Align beats with onsets"
+        "--dont-align-onsets", action="store_true", help="Don't align beats with onsets"
     )
     parser.add_argument(
-        "--onset-silence-threshold", type=float, default=0.05, help="Silence threshold"
+        "--onset-silence-threshold", type=float, default=0.035, help="Silence threshold"
     )
 
     parser.add_argument("wav_in", help="input wav file")
@@ -155,7 +155,7 @@ def main():
     prog = BeatTrackingCli(args)
     beats = apply_meta_algorithm(prog)
 
-    if prog.onset_align:
+    if not prog.dont_onset_align:
         if prog.xp is None:
             # get a percussive separation for onset alignment
             _, prog.xp = ihpss(prog.x, prog)
