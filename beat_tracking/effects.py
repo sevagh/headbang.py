@@ -3,6 +3,9 @@ from scipy.signal import butter, lfilter
 import argparse
 import multiprocessing
 import itertools
+from librosa.decompose import hpss
+from librosa.core import stft, istft
+from librosa.util import fix_length
 
 # bark frequency bands
 FREQ_BANDS = [
@@ -33,12 +36,11 @@ FREQ_BANDS = [
 ]
 
 
-def _envelope(x, fs, params):
-    attack = params[0]
-    fast_attack = params[1]
-    slow_attack = params[2]
-    release = params[3]
-    power_mem = params[4]
+def envelope(x, fs, params):
+    fast_attack = params[0]
+    slow_attack = params[1]
+    release = params[2]
+    power_mem = params[3]
 
     g_fast = numpy.exp(-1.0 / (fs * fast_attack / 1000.0))
     g_slow = numpy.exp(-1.0 / (fs * slow_attack / 1000.0))
@@ -85,15 +87,11 @@ def _envelope(x, fs, params):
 
     attack_gain_curve /= numpy.max(attack_gain_curve)
 
-    if attack == 1:
-        # normalize to [0, 1.0]
-        return x * attack_gain_curve
-
-    # sustain curve is the inverse
-    return x * (1 - attack_gain_curve)
+    # normalize to [0, 1.0]
+    return x * attack_gain_curve
 
 
-def _single_band_transient_shaper(band, x, fs, shaper_params, order=2):
+def single_band_transient_shaper(band, x, fs, shaper_params, order=2):
     nyq = 0.5 * fs
 
     lo = FREQ_BANDS[band]
@@ -108,11 +106,9 @@ def _single_band_transient_shaper(band, x, fs, shaper_params, order=2):
     return y_shaped
 
 
-def _multiband_transient_shaper(x, fs, shaper_params, npool=16):
+def multiband_transient_shaper(x, fs, shaper_params, pool):
     if shaper_params[0] not in [0, 1]:
         raise ValueError("attack should be 0 (boost sustain) or 1 (boost attacks)")
-
-    pool = multiprocessing.Pool(npool)
 
     # bark band decomposition
     band_results = list(
@@ -132,3 +128,27 @@ def _multiband_transient_shaper(x, fs, shaper_params, npool=16):
         y_t += banded_attacks
 
     return y_t
+
+
+# iterative hpss
+def ihpss(x, prog):
+    # big t-f resolution for harmonic
+    S1 = stft(x, n_fft=2*prog.harmonic_frame, win_length=prog.harmonic_frame, hop_length=int(prog.harmonic_frame//2))
+    S_h1, S_p1 = hpss(S1, margin=prog.harmonic_beta, power=numpy.inf) # hard mask
+    S_r1 = S1 - (S_h1 + S_p1)
+
+    yh = fix_length(istft(S_h1, dtype=x.dtype), len(x))
+    yp1 = fix_length(istft(S_p1, dtype=x.dtype), len(x))
+    yr1 = fix_length(istft(S_r1, dtype=x.dtype), len(x))
+
+    # small t-f resolution for percussive
+    S2 = stft(yp1+yr1, n_fft=2*prog.percussive_frame, win_length=prog.percussive_frame, hop_length=int(prog.percussive_frame//2))
+    _, S_p2 = hpss(S2, margin=prog.percussive_beta, power=numpy.inf) # hard mask
+
+    yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
+
+    if prog.shape_transients:
+        yh = multiband_transient_shaper(yh, 44100, (prog.fast_attack_ms, prog.slow_attack_ms, prog.release_ms, prog.power_memory_ms), prog.pool)
+        yp = multiband_transient_shaper(yp, 44100, (prog.fast_attack_ms, prog.slow_attack_ms, prog.release_ms, prog.power_memory_ms), prog.pool)
+
+    return yh, yp
