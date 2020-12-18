@@ -49,9 +49,9 @@ class BeatTrackingCli:
 
         # hpss params
         self.percussive_frame = args.percussive_frame
-        self.percussive_beta = args.percussive_beta
+        self.percussive_beta = args.percussive_margin
         self.harmonic_frame = args.harmonic_frame
-        self.harmonic_beta = args.harmonic_beta
+        self.harmonic_beta = args.harmonic_margin
 
         # transient shaper params
         self.fast_attack_ms = args.fast_attack_ms
@@ -94,9 +94,9 @@ def main():
         "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
     )
     parser.add_argument(
-        "--harmonic-beta",
+        "--harmonic-margin",
         type=float,
-        default=3.0,
+        default=2.0,
         help="Separation margin for HPSS harmonic iteration",
     )
     parser.add_argument(
@@ -106,9 +106,9 @@ def main():
         help="T-F/frame size for HPSS harmonic iteration",
     )
     parser.add_argument(
-        "--percussive-beta",
+        "--percussive-margin",
         type=float,
-        default=3.0,
+        default=2.0,
         help="Separation margin for HPSS percussive iteration",
     )
     parser.add_argument(
@@ -138,7 +138,7 @@ def main():
     parser.add_argument(
         "--consensus-ratio",
         type=float,
-        default=0.33,
+        default=0.50,
         help="How many (out of the maximum possible) beat locations should agree",
     )
     parser.add_argument(
@@ -157,4 +157,6 @@ def main():
 
     # if not prog.dont_onset_align:
     clicks = librosa.clicks(beats, sr=44100, length=len(prog.x))
-    write_wav(args.wav_out, prog.x + clicks)
+    final_waveform = (prog.x + clicks).astype(numpy.single)
+
+    write_wav(args.wav_out, final_waveform)

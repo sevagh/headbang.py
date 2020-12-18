@@ -261,29 +261,37 @@ def apply_meta_algorithm(prog):
     onsets = OnsetGenerator(prog.onset_silence_threshold).get_onsets(xp, prog.pool)
     aligned = align_beats_onsets(beat_consensus, onsets, prog.beat_near_threshold)
 
-    beat_jumps = numpy.where(numpy.diff(aligned) > prog.max_no_beats)[0]
+    # add a 0 in there in case no beats have been found until the first, very deep into the song
+    # also concatenate the max length for that case too
+
+    endofsong = (len(prog.x)-1)/44100.0
+
+    beat_jumps = numpy.where(numpy.diff(numpy.concatenate(([0.0], aligned, [endofsong]))) > prog.max_no_beats)[0]
     to_concat = numpy.array([])
 
     # collect extra beats by applying consensus beat tracking specifically to low-information segments
     for j in beat_jumps:
-        print("segment with no beats: {0}-{1}".format(aligned[j], aligned[j + 1]))
+        try:
+            print("segment with no beats: {0}-{1}".format(aligned[j], aligned[j + 1]))
 
-        segment_onsets = onsets[
-            numpy.where(
-                numpy.logical_and(onsets > aligned[j]+prog.max_no_beats, onsets < aligned[j + 1]-prog.max_no_beats)
-            )[0]
-        ]
+            segment_onsets = onsets[
+                numpy.where(
+                    numpy.logical_and(onsets > aligned[j]+1.0, onsets < aligned[j + 1]-1.0)
+                )[0]
+            ]
 
-        spread_onsets = numpy.split(
-            segment_onsets,
-            numpy.where(numpy.diff(segment_onsets) ** 2 > prog.onset_near_threshold)[0]
-            + 1,
-        )
+            spread_onsets = numpy.split(
+                segment_onsets,
+                numpy.where(numpy.diff(segment_onsets) ** 2 > prog.onset_near_threshold)[0]
+                + 1,
+            )
 
-        so = [s[0] for s in spread_onsets if s.size > 0]
+            so = [s[0] for s in spread_onsets if s.size > 0]
 
-        print("supplementing with percussive onsets from this region: {0}".format(so))
-        to_concat = numpy.concatenate((to_concat, so))
+            print("supplementing with percussive onsets from this region: {0}".format(so))
+            to_concat = numpy.concatenate((to_concat, so))
+        except IndexError:
+            break
 
     aligned = numpy.sort(numpy.concatenate((aligned, to_concat)))
 
