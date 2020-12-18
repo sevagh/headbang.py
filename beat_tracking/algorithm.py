@@ -1,4 +1,3 @@
-from .beat_tracking import apply_single_beat_tracker
 from .effects import ihpss, bandpass, lowpass
 import numpy
 import itertools
@@ -106,14 +105,18 @@ class OnsetGenerator:
         # https://essentia.upf.edu/essentia_python_examples.html
         self.pool = essentia.Pool()
         self.onsets = Onsets(silenceThreshold=silence_threshold)
-        self.weights = numpy.ones(len(ODF))
-        self.weights[0] = 5.0  # heavily weight hfc onsets
 
-    def get_onsets(self, prog):
+        weights = numpy.ones(len(ODF))
+        weights[0] = 2.0  # weight hfc onsets a bit stronger
+
+        self.weights = weights.astype(numpy.single)
+
+    def get_onsets(self, x, pool):
         # Computing onset detection functions.
-        prog.xp = prog.xp.astype(numpy.single)
-        for frame in FrameGenerator(prog.xp, frameSize=1024, hopSize=512):
-            onset_features = prog.pool.starmap(
+        for frame in FrameGenerator(
+            x.astype(numpy.single), frameSize=1024, hopSize=512
+        ):
+            onset_features = pool.starmap(
                 apply_single_odf,
                 zip(
                     range(len(ODF)),
@@ -132,7 +135,7 @@ class OnsetGenerator:
         return self.onsets(matrix, self.weights)
 
 
-def get_consensus_beats(all_beats, max_consensus, prog):
+def get_consensus_beats(all_beats, max_consensus, beat_near_threshold, consensus_ratio):
     # no point getting a consensus of a single algorithm
     if max_consensus == 1:
         return all_beats
@@ -140,7 +143,7 @@ def get_consensus_beats(all_beats, max_consensus, prog):
     good_beats = numpy.sort(numpy.unique(all_beats))
     grouped_beats = numpy.split(
         good_beats,
-        numpy.where(numpy.diff(good_beats) ** 2 > prog.beat_near_threshold)[0] + 1,
+        numpy.where(numpy.diff(good_beats) ** 2 > beat_near_threshold)[0] + 1,
     )
 
     beats = [x[0] for x in grouped_beats]
@@ -151,45 +154,68 @@ def get_consensus_beats(all_beats, max_consensus, prog):
     final_beats = []
     for i, tick in enumerate(beats):
         # at least CONSENSUS beat trackers agree
-        if tick_agreements[i] > max_consensus * prog.consensus_ratio:
+        if tick_agreements[i] > max_consensus * consensus_ratio:
             final_beats.append(tick)
 
     return final_beats
 
 
-# apply beat tracking to the song segmented into chunks
-def chunked_algorithm(prog, chunk_seconds):
-    chunk_samples = int(chunk_seconds * 44100.0)
+# apply beat tracking to the song within the bounds of an inconclusive segment
+def segmented_beat_tracking(
+    x, pool, beat_tracking_algorithms, segment_begin, segment_end
+):
+    chunk_begin = int(segment_begin * 44100.0)
+    chunk_end = int(segment_end * 44100.0)
 
     # need a consensus across all algorithms
     all_beats = numpy.array([])
-    nframes = 0
 
-    for frame in FrameGenerator(prog.x, frameSize=chunk_samples, hopSize=chunk_samples):
-        beat_results = prog.pool.starmap(
-            apply_single_beat_tracker,
-            zip(
-                itertools.repeat(prog.x),
-                prog.beat_tracking_algorithms,
-                itertools.repeat(nframes * chunk_seconds),
-            ),
-        )
+    beat_results = pool.starmap(
+        apply_single_beat_tracker,
+        zip(
+            itertools.repeat(x[chunk_begin:chunk_end]),
+            beat_tracking_algorithms,
+            itertools.repeat(segment_begin),
+        ),
+    )
 
-        for beats in beat_results:
-            all_beats = numpy.concatenate((all_beats, beats))
-
-        nframes += 1
+    for beats in beat_results:
+        all_beats = numpy.concatenate((all_beats, beats))
 
     all_beats = numpy.sort(all_beats)
+    return all_beats
 
-    return get_consensus_beats(all_beats, len(prog.beat_tracking_algorithms), prog)
+
+def align_beats_onsets(beats, onsets, thresh):
+    i = 0
+    j = 0
+
+    aligned_beats = []
+    time_since_last_beat = 0.0
+
+    while i < len(onsets) and j < len(beats):
+        curr_onset = onsets[i]
+        curr_beat = beats[j]
+
+        if numpy.abs(curr_onset - curr_beat) <= thresh:
+            aligned_beats.append((curr_onset + curr_beat) / 2)
+            i += 1
+            j += 1
+            continue
+
+        if curr_beat < curr_onset:
+            # increment beats
+            j += 1
+        elif curr_beat > curr_onset:
+            i += 1
+
+    return aligned_beats
+
+
+MAX_NO_BEATS = 5.0
 
 
 def apply_meta_algorithm(prog):
-    #######################
-    # pass 1 - whole song #
-    #######################
-
     # gather all the beats from all beat tracking algorithms
     beat_results = prog.pool.starmap(
         apply_single_beat_tracker,
@@ -203,18 +229,73 @@ def apply_meta_algorithm(prog):
         all_beats = numpy.concatenate((all_beats, beats))
 
     # get a percussive separation for onset alignment
-    _, prog.xp = ihpss(prog.x, prog)
-
-    onsets = OnsetGenerator(prog.onset_silence_threshold).get_onsets(prog)
-
-    # add the onsets in the mix
-    all_beats = numpy.concatenate((all_beats, onsets))
+    _, xp = ihpss(
+        prog.x,
+        # hpss params
+        (
+            prog.harmonic_frame,
+            prog.harmonic_beta,
+            prog.percussive_frame,
+            prog.percussive_beta,
+        ),
+        # transient shaper params
+        (
+            prog.fast_attack_ms,
+            prog.slow_attack_ms,
+            prog.release_ms,
+            prog.power_memory_ms,
+        ),
+        prog.pool,
+    )
 
     all_beats = numpy.sort(all_beats)
 
-    # get consensus with a little help from the percussive onsets
     beat_consensus = get_consensus_beats(
-        all_beats, len(prog.beat_tracking_algorithms), prog
+        all_beats,
+        len(prog.beat_tracking_algorithms),
+        prog.beat_near_threshold,
+        prog.consensus_ratio,
     )
 
-    return beat_consensus
+    onsets = OnsetGenerator(prog.onset_silence_threshold).get_onsets(xp, prog.pool)
+    aligned = align_beats_onsets(beat_consensus, onsets, prog.beat_near_threshold)
+
+    beat_jumps = numpy.where(numpy.diff(aligned) > MAX_NO_BEATS)[0]
+    print(beat_jumps)
+
+    extra_beats = numpy.array([])
+
+    # collect extra beats by applying consensus beat tracking specifically to the confusing segments
+    for j in beat_jumps:
+        print(
+            "confusing segment with no beats: {0}-{1}".format(
+                aligned[j], aligned[j + 1]
+            )
+        )
+        new_beats = segmented_beat_tracking(
+            prog.x, prog.pool, prog.beat_tracking_algorithms, aligned[j], aligned[j + 1]
+        )
+        extra_beats = numpy.concatenate((extra_beats, new_beats))
+
+    # may have trouble getting a strong consensus from the extra_beats
+    # reduce consensus here
+    # extra_beat_consensus = get_consensus_beats(
+    #    extra_beats,
+    #    len(prog.beat_tracking_algorithms),
+    #    prog.beat_near_threshold,
+    #    prog.consensus_ratio/2, # half consensus
+    # )
+
+    # redo the entire consensus with new beats per segment added in
+    all_beats = numpy.concatenate((all_beats, extra_beats))
+    all_beats = numpy.sort(all_beats)
+
+    beat_consensus2 = get_consensus_beats(
+        all_beats,
+        len(prog.beat_tracking_algorithms),
+        prog.beat_near_threshold,
+        prog.consensus_ratio,
+    )
+
+    aligned = align_beats_onsets(beat_consensus2, onsets, prog.beat_near_threshold)
+    return aligned

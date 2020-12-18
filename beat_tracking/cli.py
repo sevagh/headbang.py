@@ -5,7 +5,6 @@ import numpy
 import librosa
 from madmom.io.audio import load_audio_file, write_wave_file
 from .algorithm import apply_meta_algorithm
-from .effects import ihpss
 
 INTRO = """
 Beat tracking

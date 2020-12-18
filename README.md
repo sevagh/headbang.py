@@ -6,11 +6,9 @@ sevagh:beat-tracking $ beat-tracking --meta-algorithm 1 ./anup_sastry_origin.wav
 
 # beat-tracking
 
-A wacky beat-tracking toolbox.
+A consensus-based beat-tracking meta-algorithm, to come up with accurate beat tracking for fully mixed progressive metal songs songs. This is achieved by mixing and matching the outputs from various preprocessing, input representations, and core beat tracking algorithms.
 
-The goal of the beat-tracking project is to house some useful or experimental variants of accurate beat tracking for fully mixed songs, by mixing and matching the outputs from various preprocessing, input representations, and core beat tracking algorithms. For terminology, I'll say that this library implements some meta-algorithms made from beat tracking algorithms.
-
-A non-goal of the beat-tracking project is to re-implement the beat tracking algorithms from scratch (unlike my [pitch-detection](https://github.com/sevagh/pitch-detection) collection). Every beat tracker used in the project is from an external implementation (madmom, librosa, essentia, etc.).
+A non-goal of the beat-tracking project is to re-implement the beat tracking algorithms from scratch (unlike my [pitch-detection](https://github.com/sevagh/pitch-detection) collection). Most of the base beat tracking algorithms used in the project is from an external implementation (madmom, librosa, essentia, etc.).
 
 ### Consensus
 
