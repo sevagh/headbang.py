@@ -4,8 +4,7 @@ import multiprocessing
 import numpy
 import librosa
 from madmom.io.audio import load_audio_file, write_wave_file
-from .meta_algorithms import apply_meta_algorithm
-from .onset_align import OnsetAligner
+from .algorithm import apply_meta_algorithm
 from .effects import ihpss
 
 INTRO = """
@@ -98,7 +97,7 @@ def main():
     parser.add_argument(
         "--harmonic-beta",
         type=float,
-        default=2.0,
+        default=3.0,
         help="Separation margin for HPSS harmonic iteration",
     )
     parser.add_argument(
@@ -110,7 +109,7 @@ def main():
     parser.add_argument(
         "--percussive-beta",
         type=float,
-        default=2.0,
+        default=3.0,
         help="Separation margin for HPSS percussive iteration",
     )
     parser.add_argument(
@@ -151,15 +150,9 @@ def main():
     print(args)
 
     prog = BeatTrackingCli(args)
+
     beats = apply_meta_algorithm(prog)
 
-    if not prog.dont_onset_align:
-        if prog.xp is None:
-            # get a percussive separation for onset alignment
-            _, prog.xp = ihpss(prog.x, prog)
-
-        oa = OnsetAligner(prog.onset_silence_threshold)
-        beats = oa.align_beats(beats, prog)
-
+    # if not prog.dont_onset_align:
     clicks = librosa.clicks(beats, sr=44100, length=len(prog.x))
     write_wav(args.wav_out, prog.x + clicks)
