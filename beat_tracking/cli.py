@@ -54,15 +54,17 @@ class BeatTrackingCli:
         self.harmonic_beta = args.harmonic_beta
 
         # transient shaper params
-        self.dont_shape_transients = args.dont_shape_transients
         self.fast_attack_ms = args.fast_attack_ms
         self.slow_attack_ms = args.slow_attack_ms
         self.release_ms = args.release_ms
         self.power_memory_ms = args.power_memory_ms
 
         # onset alignment params
-        self.dont_onset_align = args.dont_align_onsets
         self.onset_silence_threshold = args.onset_silence_threshold
+
+        # segmented supplementary beats
+        self.max_no_beats = args.max_no_beats
+        self.onset_near_threshold = args.onset_near_threshold
 
 
 def main():
@@ -79,9 +81,7 @@ def main():
         help="List of beat tracking algorithms to apply",
     )
     parser.add_argument(
-        "--dont-shape-transients",
-        action="store_true",
-        help="Don't apply transient enhancing",
+        "--max-no-beats", type=float, default=2.0, help="Time without beats to tolerate"
     )
     parser.add_argument(
         "--fast-attack-ms", type=int, default=1, help="Fast attack (ms)"
@@ -130,13 +130,16 @@ def main():
         help="How close beats should be in seconds to be considered the same beat",
     )
     parser.add_argument(
+        "--onset-near-threshold",
+        type=float,
+        default=0.1,
+        help="How close onsets should be in seconds when supplementing onset information",
+    )
+    parser.add_argument(
         "--consensus-ratio",
         type=float,
         default=0.33,
         help="How many (out of the maximum possible) beat locations should agree",
-    )
-    parser.add_argument(
-        "--dont-align-onsets", action="store_true", help="Don't align beats with onsets"
     )
     parser.add_argument(
         "--onset-silence-threshold", type=float, default=0.035, help="Silence threshold"

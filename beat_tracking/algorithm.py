@@ -52,7 +52,7 @@ def essentia_degara(x, act):
 
 
 def librosa_beats(x, act):
-    _, beats = beat_track(x, sr=44100)
+    _, beats = beat_track(x, sr=44100, units='time')
     return beats
 
 
@@ -80,7 +80,9 @@ BEAT_TRACK_ALGOS = {
 def apply_single_beat_tracker(x, beat_algo, frame_offset=0):
     # global RNN activation for all madmom algorithms
     act = madmom.features.beats.RNNBeatProcessor()(x)
-    return BEAT_TRACK_ALGOS[beat_algo](x, act) + frame_offset
+    beats_pre_offset = BEAT_TRACK_ALGOS[beat_algo](x, act)
+    beats_post_offset = beats_pre_offset + frame_offset
+    return beats_post_offset
 
 
 ODF = ["hfc", "complex", "flux", "rms"]
@@ -170,6 +172,8 @@ def segmented_beat_tracking(
     # need a consensus across all algorithms
     all_beats = numpy.array([])
 
+    print('applying segmented beat tracking with increment: {0}'.format(segment_begin))
+
     beat_results = pool.starmap(
         apply_single_beat_tracker,
         zip(
@@ -210,9 +214,6 @@ def align_beats_onsets(beats, onsets, thresh):
             i += 1
 
     return aligned_beats
-
-
-MAX_NO_BEATS = 5.0
 
 
 def apply_meta_algorithm(prog):
@@ -260,42 +261,30 @@ def apply_meta_algorithm(prog):
     onsets = OnsetGenerator(prog.onset_silence_threshold).get_onsets(xp, prog.pool)
     aligned = align_beats_onsets(beat_consensus, onsets, prog.beat_near_threshold)
 
-    beat_jumps = numpy.where(numpy.diff(aligned) > MAX_NO_BEATS)[0]
-    print(beat_jumps)
+    beat_jumps = numpy.where(numpy.diff(aligned) > prog.max_no_beats)[0]
+    to_concat = numpy.array([])
 
-    extra_beats = numpy.array([])
-
-    # collect extra beats by applying consensus beat tracking specifically to the confusing segments
+    # collect extra beats by applying consensus beat tracking specifically to low-information segments
     for j in beat_jumps:
         print(
-            "confusing segment with no beats: {0}-{1}".format(
+            "segment with no beats: {0}-{1}".format(
                 aligned[j], aligned[j + 1]
             )
         )
-        new_beats = segmented_beat_tracking(
-            prog.x, prog.pool, prog.beat_tracking_algorithms, aligned[j], aligned[j + 1]
+
+        # +,- 1.0 seconds to give some leeway
+        segment_onsets = onsets[numpy.where(numpy.logical_and(onsets > aligned[j]+1.0, onsets < aligned[j+1]-1.0))[0]]
+
+        spread_apart_onsets = numpy.split(
+            segment_onsets,
+            numpy.where(numpy.diff(segment_onsets) ** 2 > prog.onset_near_threshold)[0] + 1,
         )
-        extra_beats = numpy.concatenate((extra_beats, new_beats))
 
-    # may have trouble getting a strong consensus from the extra_beats
-    # reduce consensus here
-    # extra_beat_consensus = get_consensus_beats(
-    #    extra_beats,
-    #    len(prog.beat_tracking_algorithms),
-    #    prog.beat_near_threshold,
-    #    prog.consensus_ratio/2, # half consensus
-    # )
+        sao = [s[0] for s in spread_apart_onsets if s]
 
-    # redo the entire consensus with new beats per segment added in
-    all_beats = numpy.concatenate((all_beats, extra_beats))
-    all_beats = numpy.sort(all_beats)
+        print('onsets from this region: {0}'.format(sao))
+        to_concat = numpy.concatenate((to_concat, sao))
 
-    beat_consensus2 = get_consensus_beats(
-        all_beats,
-        len(prog.beat_tracking_algorithms),
-        prog.beat_near_threshold,
-        prog.consensus_ratio,
-    )
+    aligned = numpy.sort(numpy.concatenate((aligned, to_concat)))
 
-    aligned = align_beats_onsets(beat_consensus2, onsets, prog.beat_near_threshold)
     return aligned
