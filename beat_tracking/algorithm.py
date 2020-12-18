@@ -270,7 +270,7 @@ def apply_meta_algorithm(prog):
 
         segment_onsets = onsets[
             numpy.where(
-                numpy.logical_and(onsets > aligned[j], onsets < aligned[j + 1])
+                numpy.logical_and(onsets > aligned[j]+prog.max_no_beats, onsets < aligned[j + 1]-prog.max_no_beats)
             )[0]
         ]
 
