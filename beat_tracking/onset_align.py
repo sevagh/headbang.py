@@ -26,11 +26,16 @@ def apply_single_odf(odf_idx, frame):
     return ONSET_DETECTORS[odf_idx](mag, phase)
 
 
+BEAT_SPARSITY_TOLERANCE = 2.0 # 2 seconds without a beat is too long
+
+
 def align_with_thresh(beats, onsets, thresh):
     i = 0
     j = 0
 
     aligned_beats = []
+    time_since_last_beat = 0.0
+
     while i < len(onsets) and j < len(beats):
         curr_onset = onsets[i]
         curr_beat = beats[j]
@@ -40,6 +45,16 @@ def align_with_thresh(beats, onsets, thresh):
             i += 1
             j += 1
             continue
+        else:
+            delta = curr_beat - time_since_last_beat
+            if delta >= BEAT_SPARSITY_TOLERANCE:
+                # add the next strong percussive onset if it's been too long since we added a beat
+                # kinda hacky but
+                aligned_beats.append(curr_onset)
+                time_since_last_beat = curr_beat
+                i += 1
+                j += 1
+                continue
 
         if curr_beat < curr_onset:
             # increment beats

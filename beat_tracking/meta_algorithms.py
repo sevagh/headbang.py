@@ -79,19 +79,16 @@ def apply_meta_algorithm(prog):
     # pass 2 - segments #
     #####################
 
-    beats_segment_10s = chunked_algorithm(prog, 10.0)
-    beats_segment_5s = chunked_algorithm(prog, 5.0)
-    beats_segment_2s = chunked_algorithm(prog, 2.0)
+    #beats_segment_10s = chunked_algorithm(prog, 10.0)
+    #beats_segment_5s = chunked_algorithm(prog, 5.0)
+    #beats_segment_2s = chunked_algorithm(prog, 2.0)
 
-    print(all_beats)
-
-    # add the segmented beats
-    all_beats = numpy.concatenate((all_beats, beats_segment_10s))
-    all_beats = numpy.concatenate((all_beats, beats_segment_5s))
-    all_beats = numpy.concatenate((all_beats, beats_segment_2s))
+    ## add the segmented beats
+    #all_beats = numpy.concatenate((all_beats, beats_segment_10s))
+    #all_beats = numpy.concatenate((all_beats, beats_segment_5s))
+    #all_beats = numpy.concatenate((all_beats, beats_segment_2s))
 
     all_beats = numpy.sort(all_beats)
-    print(all_beats)
 
     # 2 sets of beats, maximum of 4xalgo consensus (with some extra from the chunks)
     beat_consensus = get_consensus_beats(
