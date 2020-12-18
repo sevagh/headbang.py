@@ -52,7 +52,7 @@ def essentia_degara(x, act):
 
 
 def librosa_beats(x, act):
-    _, beats = beat_track(x, sr=44100, units='time')
+    _, beats = beat_track(x, sr=44100, units="time")
     return beats
 
 
@@ -172,7 +172,7 @@ def segmented_beat_tracking(
     # need a consensus across all algorithms
     all_beats = numpy.array([])
 
-    print('applying segmented beat tracking with increment: {0}'.format(segment_begin))
+    print("applying segmented beat tracking with increment: {0}".format(segment_begin))
 
     beat_results = pool.starmap(
         apply_single_beat_tracker,
@@ -266,24 +266,24 @@ def apply_meta_algorithm(prog):
 
     # collect extra beats by applying consensus beat tracking specifically to low-information segments
     for j in beat_jumps:
-        print(
-            "segment with no beats: {0}-{1}".format(
-                aligned[j], aligned[j + 1]
-            )
-        )
+        print("segment with no beats: {0}-{1}".format(aligned[j], aligned[j + 1]))
 
-        # +,- 1.0 seconds to give some leeway
-        segment_onsets = onsets[numpy.where(numpy.logical_and(onsets > aligned[j]+1.0, onsets < aligned[j+1]-1.0))[0]]
+        segment_onsets = onsets[
+            numpy.where(
+                numpy.logical_and(onsets > aligned[j], onsets < aligned[j + 1])
+            )[0]
+        ]
 
-        spread_apart_onsets = numpy.split(
+        spread_onsets = numpy.split(
             segment_onsets,
-            numpy.where(numpy.diff(segment_onsets) ** 2 > prog.onset_near_threshold)[0] + 1,
+            numpy.where(numpy.diff(segment_onsets) ** 2 > prog.onset_near_threshold)[0]
+            + 1,
         )
 
-        sao = [s[0] for s in spread_apart_onsets if s]
+        so = [s[0] for s in spread_onsets if s.size > 0]
 
-        print('onsets from this region: {0}'.format(sao))
-        to_concat = numpy.concatenate((to_concat, sao))
+        print("supplementing with percussive onsets from this region: {0}".format(so))
+        to_concat = numpy.concatenate((to_concat, so))
 
     aligned = numpy.sort(numpy.concatenate((aligned, to_concat)))
 
