@@ -55,8 +55,8 @@ def main():
     beat_args.add_argument(
         "--algorithms",
         type=str,
-        default="1,2,3,4,5,6,7,8",
-        help="List of beat tracking algorithms to apply",
+        default="1,2,3,4,5,6,7",
+        help="List of beat tracking algorithms to apply. Btrack omitted by default",
     )
     beat_args.add_argument(
         "--beat-near-threshold",
@@ -126,11 +126,17 @@ def main():
         "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
     )
 
+    # generic arguments
     parser.add_argument(
         "--n-pool",
         type=int,
         default=multiprocessing.cpu_count() - 1,
         help="How many threads to use in multiprocessing pool",
+    )
+    parser.add_argument(
+        "--show-plots",
+        action="store_true",
+        help="Display plots of intermediate steps describing the algorithm using matplotlib",
     )
 
     parser.add_argument("wav_in", help="input wav file")
