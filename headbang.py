@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import matplotlib.pyplot as plt
 import argparse
 import sys
 import json
@@ -26,6 +27,7 @@ import multiprocessing
 from librosa.decompose import hpss
 from librosa.core import stft, istft
 from librosa.util import fix_length
+import matplotlib
 
 
 def load_wav(wav_in):
@@ -146,6 +148,15 @@ def main():
 
     print("Loading file {0} with 44100 sampling rate".format(args.wav_in))
     x = load_wav(args.wav_in)
+
+    if args.show_plots:
+        timestamps = [i/44100.0 for i in range(len(x))]
+        plt.figure(1)
+        plt.title("Input waveform")
+        plt.plot(timestamps, x)
+        plt.xlabel("time (seconds)")
+        plt.ylabel("amplitude")
+        plt.show()
 
     print("Applying meta algorithm")
     beats = apply_meta_algorithm(x, args)
@@ -303,6 +314,19 @@ def apply_meta_algorithm(x, args):
 
     all_beats = numpy.sort(all_beats)
 
+    if args.show_plots:
+        marker = itertools.cycle((',', '+', '.', 'o', '*')) 
+        timestamps = [i/44100.0 for i in range(len(x))]
+        plt.figure(1)
+        plt.title("Input waveform with all beats")
+        plt.plot(timestamps, x)
+        plt.xlabel("time (seconds)")
+        plt.ylabel("amplitude")
+        for beats in beat_results:
+            plt.plot(beats, numpy.zeros(len(beats)), marker=next(marker), linestyle='None', markersize=20)
+        plt.show()
+
+
     total = len(beat_tracking_algorithms)
     consensus = int(numpy.ceil(args.consensus_ratio * total))
 
@@ -327,6 +351,7 @@ def apply_meta_algorithm(x, args):
             args.power_memory_ms,
         ),
         pool,
+        args.show_plots,
     )
 
     print(
@@ -340,8 +365,28 @@ def apply_meta_algorithm(x, args):
         consensus,
     )
 
+    if args.show_plots:
+        timestamps = [i/44100.0 for i in range(len(x))]
+        plt.figure(1)
+        plt.title("Input waveform with beat consensus")
+        plt.plot(timestamps, x)
+        plt.xlabel("time (seconds)")
+        plt.ylabel("amplitude")
+        plt.plot(beat_consensus, numpy.zeros(len(beat_consensus)), marker="x", linestyle='None', color='red', markersize=20)
+        plt.show()
+
     print("Detecting percussive onsets with methods {0}".format(ODF))
     onsets = OnsetGenerator(args.onset_silence_threshold).get_onsets(xp, pool)
+
+    if args.show_plots:
+        timestamps = [i/44100.0 for i in range(len(x))]
+        plt.figure(1)
+        plt.title("Percussive-attack-enhanced with onsets")
+        plt.plot(timestamps, x)
+        plt.xlabel("time (seconds)")
+        plt.ylabel("amplitude")
+        plt.plot(onsets, numpy.zeros(len(onsets)), marker="o", linestyle='None', color='green', markersize=20)
+        plt.show()
 
     print("Aligning agreed beats with percussive onsets")
     aligned = align_beats_onsets(beat_consensus, onsets, args.beat_near_threshold)
@@ -393,7 +438,29 @@ def apply_meta_algorithm(x, args):
         except IndexError:
             break
 
+    if args.show_plots:
+        timestamps = [i/44100.0 for i in range(len(x))]
+        plt.figure(1)
+        plt.title("Waveform with onset-aligned beats")
+        plt.plot(timestamps, x)
+        plt.xlabel("time (seconds)")
+        plt.ylabel("amplitude")
+        plt.plot(aligned, numpy.zeros(len(aligned)), marker="x", linestyle='None', color='red', markersize=20)
+        plt.show()
+
+    if args.show_plots:
+        timestamps = [i/44100.0 for i in range(len(x))]
+        plt.figure(1)
+        plt.title("Waveform with aligned beats, supplemented with onsets")
+        plt.plot(timestamps, x)
+        plt.xlabel("time (seconds)")
+        plt.ylabel("amplitude")
+        plt.plot(aligned, numpy.zeros(len(aligned)), marker="x", linestyle='None', color='red', markersize=20)
+        plt.plot(to_concat, numpy.zeros(len(to_concat)), marker="o", linestyle='None', color='green', markersize=20)
+        plt.show()
+
     aligned = numpy.sort(numpy.concatenate((aligned, to_concat)))
+
     return aligned
 
 
@@ -530,7 +597,7 @@ def multiband_transient_shaper(x, fs, shaper_params, pool):
 
 
 # iterative hpss
-def ihpss(x, hpss_params, transient_shaper_params, pool):
+def ihpss(x, hpss_params, transient_shaper_params, pool, show_plots):
     harmonic_frame = hpss_params[0]
     harmonic_beta = hpss_params[1]
     percussive_frame = hpss_params[2]
@@ -570,16 +637,34 @@ def ihpss(x, hpss_params, transient_shaper_params, pool):
     _, S_p2 = hpss(S2, margin=percussive_beta, power=numpy.inf)  # hard mask
 
     yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
+    yp /= max(numpy.abs(yp))
 
     print("Applying multiband transient shaper")
-    yp = multiband_transient_shaper(
+    yp_tshaped = multiband_transient_shaper(
         yp,
         44100,
         transient_shaper_params,
         pool,
     )
+    yp_tshaped /= max(numpy.abs(yp_tshaped))
 
-    return yp
+    if show_plots:
+        timestamps = [i/44100.0 for i in range(len(x))]
+        plt.figure(1)
+        plt.title("Percussive separation after iterative HPSS")
+        plt.plot(timestamps, yp)
+        plt.xlabel("time (seconds)")
+        plt.ylabel("amplitude")
+        plt.show()
+
+        plt.figure(1)
+        plt.title("Percussive separation with enhanced attacks")
+        plt.plot(timestamps, yp_tshaped)
+        plt.xlabel("time (seconds)")
+        plt.ylabel("amplitude")
+        plt.show()
+
+    return yp_tshaped
 
 
 if __name__ == "__main__":
