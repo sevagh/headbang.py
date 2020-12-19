@@ -8,23 +8,35 @@ The output is the same input wav file with clicks on the predicted beat location
 
 The result is achieved by considering a consensus or ensemble of the outputs from various different beat and onset detection algorithms applied to the input song (with and without preprocessing). A non-goal of headbang.py is the implementation of any beat tracking or onset detection algorithms from scratch. All of the core algorithms used in the project are from external sources.
 
-## Algorithm details
+### Algorithm details
 
 The algorithm is described in more detail, and with helpful visuals, on the project's github-pages site: https://sevagh.github.io/headbang.py
 
-In a nutshell:
-1. Apply a mix of beat trackers on the input song with no preprocessing, specified by `--algorithms 1,2,3,...`
-2. Group beats that are near each other within a configurable time interval, specified by `--beat-near-threshold`
-3. Count beats in each group. The first beat in each group is the final beat selected
-4. Select the first beat from groups that achieved consensus, configured by `--consensus-ratio` (e.g. if 0.5, then at least half of the algorithms must agree on a beat)
-5. Create a "percussive-attack-enhanced" signal by applying percussive source separation followed by transient enhancing to emphasize percussive attacks from the input signal
-6. Apply onset detection on the percussive-attack-enhanced signal, weighted towards percussion onset detection
-7. Align the final consensus beat locations with the percussive-attack-enhanced onset locations. This should be a better job of weeding out strange beats that don't hit at the same time as the drums
-8. Finally, if any long passages of the song have no beats, supplement these with the percussive-attack-enhanced onsets
+## Installation and usage
 
-## Usage
+headbang.py has been written and verified with Python 3.8 on AMD64 machines running Fedora 32 Linux. However, there shouldn't be any problems running it on different machines if the requirements can be successfully installed.
 
-headbang.py has been written and verified with Python 3.8 on AMD64 machines running Fedora 32 Linux. However, there shouldn't be any problems running it if the requirements can be successfully installed.
+The only sticking point is that the [BTrack](https://github.com/adamstark/BTrack) package is not on pip, and needs to be installed manually. My [fork](https://github.com/sevagh/BTrack) supports a Python 3.8 install:
+
+```
+sevagh:~ $ git clone https://github.com/sevagh/BTrack
+sevagh:~ $ cd BTrack/modules-and-plug-ins/python-module
+sevagh:python-module $ python3.8 setup.py build
+
+# install to your system
+sevagh:python-module $ sudo python3.8 setup.py install
+
+# install for your local user
+sevagh:python-module $ pip3.8 install --user -e .
+```
+
+You can choose to omit BTrack (and run the program without `--algorithm 8`), but I find that it's one of the useful members of the consensus for percussive metal songs. The full list of 8 beat trackers are:
+* 4 from [madmom.features.beats](https://madmom.readthedocs.io/en/latest/modules/features/beats.html): RNNBeatProcessor activation -> DBNBeatTrackingProcessor, BeatTrackingProcessor, CRFBeatDetectionProcessor, BeatDetectionProcessor
+* 2 from Essentia: [BeatTrackerMultiFeature](https://essentia.upf.edu/reference/std_BeatTrackerMultiFeature.html) and [BeatTrackerDegara](https://essentia.upf.edu/reference/std_BeatTrackerDegara.html)
+* 1 from librosa: [librosa.beat.beat_track](https://librosa.org/doc/latest/generated/librosa.beat.beat_track.html)
+* [BTrack](https://github.com/adamstark/BTrack), mentioned above
+
+More beat trackers are always welcome. The results would probably get better if more diverse beat trackers are added to the group.
 
 There are many arguments, but for a prog metal song, you should be fine with the defaults. Of course, I always encourage experimentation. The [github-pages site](https://sevagh.github.io/headbang.py) should provide clarity on which part of the algorithm is affected by the various input arguments.
 
