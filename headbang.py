@@ -28,11 +28,6 @@ from librosa.core import stft, istft
 from librosa.util import fix_length
 
 
-INTRO = """
-Beat tracking
-"""
-
-
 def load_wav(wav_in):
     x, fs = load_audio_file(wav_in, sample_rate=44100)
 
@@ -49,210 +44,145 @@ def load_wav(wav_in):
     return x
 
 
-def write_wav(wav_out, x):
-    write_wave_file(x, wav_out, sample_rate=44100)
-
-
-class BeatTrackingCli:
-    def __init__(self, args):
-        # shared multiprocessing pool
-        self.pool = multiprocessing.Pool(args.n_pool)
-
-        self.x = load_wav(args.wav_in)
-        self.xp = None
-
-        # here's where i could parameter check
-        # if i cared
-
-        # consensus params
-        self.beat_tracking_algorithms = [int(x) for x in args.algorithms.split(",")]
-        self.beat_near_threshold = args.beat_near_threshold
-        self.consensus_ratio = args.consensus_ratio
-
-        # hpss params
-        self.percussive_frame = args.percussive_frame
-        self.percussive_beta = args.percussive_margin
-        self.harmonic_frame = args.harmonic_frame
-        self.harmonic_beta = args.harmonic_margin
-
-        # transient shaper params
-        self.fast_attack_ms = args.fast_attack_ms
-        self.slow_attack_ms = args.slow_attack_ms
-        self.release_ms = args.release_ms
-        self.power_memory_ms = args.power_memory_ms
-
-        # onset alignment params
-        self.onset_silence_threshold = args.onset_silence_threshold
-
-        # segmented supplementary beats
-        self.max_no_beats = args.max_no_beats
-        self.onset_near_threshold = args.onset_near_threshold
-
-
 def main():
     parser = argparse.ArgumentParser(
-        prog="beat-tracking",
-        description=INTRO,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        prog="headbang.py",
+        description="Accurate percussive beat tracking for metal songs",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    parser.add_argument(
+    beat_args = parser.add_argument_group("beat arguments")
+    beat_args.add_argument(
         "--algorithms",
         type=str,
         default="1,2,3,4,5,6,7,8",
         help="List of beat tracking algorithms to apply",
     )
-    parser.add_argument(
-        "--max-no-beats", type=float, default=2.0, help="Time without beats to tolerate"
+    beat_args.add_argument(
+        "--beat-near-threshold",
+        type=float,
+        default=0.03,
+        help="How close beats should be in seconds to be considered the same beat",
     )
-    parser.add_argument(
-        "--fast-attack-ms", type=int, default=1, help="Fast attack (ms)"
+    beat_args.add_argument(
+        "--consensus-ratio",
+        type=float,
+        default=0.5,
+        help="How many (out of the maximum possible) beat locations should agree",
     )
-    parser.add_argument(
-        "--slow-attack-ms", type=int, default=15, help="Slow attack (ms)"
+
+    onset_args = parser.add_argument_group("onsets arguments")
+    onset_args.add_argument(
+        "--max-no-beats",
+        type=float,
+        default=2.0,
+        help="Segments with missing beats to substitute onsets",
     )
-    parser.add_argument("--release-ms", type=int, default=20, help="Release (ms)")
-    parser.add_argument(
-        "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
+    onset_args.add_argument(
+        "--onset-near-threshold",
+        type=float,
+        default=0.5,
+        help="How close onsets should be in seconds when supplementing onset information",
     )
-    parser.add_argument(
+    onset_args.add_argument(
+        "--onset-silence-threshold", type=float, default=0.035, help="Silence threshold"
+    )
+
+    hpss_args = parser.add_argument_group("hpss arguments")
+    hpss_args.add_argument(
         "--harmonic-margin",
         type=float,
         default=2.0,
         help="Separation margin for HPSS harmonic iteration",
     )
-    parser.add_argument(
+    hpss_args.add_argument(
         "--harmonic-frame",
         type=int,
         default=4096,
         help="T-F/frame size for HPSS harmonic iteration",
     )
-    parser.add_argument(
+    hpss_args.add_argument(
         "--percussive-margin",
         type=float,
         default=2.0,
         help="Separation margin for HPSS percussive iteration",
     )
-    parser.add_argument(
+    hpss_args.add_argument(
         "--percussive-frame",
         type=int,
         default=256,
         help="T-F/frame size for HPSS percussive iteration",
     )
+
+    tshaper_args = parser.add_argument_group("transient shaper arguments")
+    tshaper_args.add_argument(
+        "--fast-attack-ms", type=int, default=1, help="Fast attack (ms)"
+    )
+    tshaper_args.add_argument(
+        "--slow-attack-ms", type=int, default=15, help="Slow attack (ms)"
+    )
+    tshaper_args.add_argument("--release-ms", type=int, default=20, help="Release (ms)")
+    tshaper_args.add_argument(
+        "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
+    )
+
     parser.add_argument(
         "--n-pool",
         type=int,
         default=multiprocessing.cpu_count() - 1,
         help="How many threads to use in multiprocessing pool",
     )
-    parser.add_argument(
-        "--beat-near-threshold",
-        type=float,
-        default=0.05,
-        help="How close beats should be in seconds to be considered the same beat",
-    )
-    parser.add_argument(
-        "--onset-near-threshold",
-        type=float,
-        default=0.1,
-        help="How close onsets should be in seconds when supplementing onset information",
-    )
-    parser.add_argument(
-        "--consensus-ratio",
-        type=float,
-        default=0.50,
-        help="How many (out of the maximum possible) beat locations should agree",
-    )
-    parser.add_argument(
-        "--onset-silence-threshold", type=float, default=0.035, help="Silence threshold"
-    )
 
     parser.add_argument("wav_in", help="input wav file")
     parser.add_argument("wav_out", help="output wav file")
 
     args = parser.parse_args()
-    print(args)
 
-    prog = BeatTrackingCli(args)
+    print("Loading file {0} with 44100 sampling rate".format(args.wav_in))
+    x = load_wav(args.wav_in)
 
-    beats = apply_meta_algorithm(prog)
+    print("Applying meta algorithm")
+    beats = apply_meta_algorithm(x, args)
 
-    # if not prog.dont_onset_align:
-    clicks = librosa.clicks(beats, sr=44100, length=len(prog.x))
-    final_waveform = (prog.x + clicks).astype(numpy.single)
+    print("Overlaying clicks at beat locations")
+    clicks = librosa.clicks(beats, sr=44100, length=len(x))
+    final_waveform = (x + clicks).astype(numpy.single)
 
-    write_wav(args.wav_out, final_waveform)
-
-
-def madmom_1(x, act):
-    proc = madmom.features.beats.DBNBeatTrackingProcessor(fps=100)
-    return proc(act)
-
-
-def madmom_2(x, act):
-    proc = madmom.features.beats.BeatTrackingProcessor(fps=100)
-    return proc(act)
-
-
-def madmom_3(x, act):
-    proc = madmom.features.beats.CRFBeatDetectionProcessor(fps=100)
-    return proc(act)
-
-
-def madmom_4(x, act):
-    proc = madmom.features.beats.BeatDetectionProcessor(fps=100)
-    return proc(act)
-
-
-######################################
-# activation unused below this point #
-######################################
-
-
-def essentia_mfbt(x, act):
-    beats, _ = BeatTrackerMultiFeature()(x)
-    return beats
-
-
-def essentia_degara(x, act):
-    return BeatTrackerDegara()(x)
-
-
-def librosa_beats(x, act):
-    _, beats = beat_track(x, sr=44100, units="time")
-    return beats
-
-
-def btrack(x, act):
-    try:
-        import btrack
-    except Exception:
-        print("you must install btrack yourself manually", file=sys.stderr)
-        sys.exit(1)
-    return btrack.trackBeats(x)
-
-
-BEAT_TRACK_ALGOS = {
-    1: madmom_1,
-    2: madmom_2,
-    3: madmom_3,
-    4: madmom_4,
-    5: essentia_mfbt,
-    6: essentia_degara,
-    7: librosa_beats,
-    8: btrack,
-}
+    print("Writing output with clicks to {0}".format(args.wav_out))
+    write_wave_file(final_waveform, args.wav_out, sample_rate=44100)
 
 
 def apply_single_beat_tracker(x, beat_algo, frame_offset=0):
-    # global RNN activation for all madmom algorithms
+    beats = None
     act = madmom.features.beats.RNNBeatProcessor()(x)
-    beats_pre_offset = BEAT_TRACK_ALGOS[beat_algo](x, act)
-    beats_post_offset = beats_pre_offset + frame_offset
-    return beats_post_offset
+
+    if beat_algo == 1:
+        beats = madmom.features.beats.DBNBeatTrackingProcessor(fps=100)(act)
+    elif beat_algo == 2:
+        beats = madmom.features.beats.BeatTrackingProcessor(fps=100)(act)
+    elif beat_algo == 3:
+        beats = madmom.features.beats.CRFBeatDetectionProcessor(fps=100)(act)
+    elif beat_algo == 4:
+        beats = madmom.features.beats.BeatDetectionProcessor(fps=100)(act)
+    elif beat_algo == 5:
+        beats, _ = BeatTrackerMultiFeature()(x)
+    elif beat_algo == 6:
+        beats = BeatTrackerDegara()(x)
+    elif beat_algo == 7:
+        _, beats = beat_track(x, sr=44100, units="time")
+    elif beat_algo == 8:
+        try:
+            import btrack
+        except Exception:
+            print("you must install btrack yourself manually", file=sys.stderr)
+            sys.exit(1)
+        beats = btrack.trackBeats(x)
+
+    print('beat algo:\n\t{0}\n\t{1}\n'.format(beat_algo, beats))
+    return beats + frame_offset
 
 
-ODF = ["hfc", "complex", "flux", "rms"]
+ODF = ["hfc", "flux", "rms"]
 ONSET_DETECTORS = [OnsetDetection(method=f) for f in ODF]
 
 w = Windowing(type="hann")
@@ -270,13 +200,11 @@ def apply_single_odf(odf_idx, frame):
 
 class OnsetGenerator:
     def __init__(self, silence_threshold):
-        # cribbed straight from the essentia examples
-        # https://essentia.upf.edu/essentia_python_examples.html
         self.pool = essentia.Pool()
         self.onsets = Onsets(silenceThreshold=silence_threshold)
 
         weights = numpy.ones(len(ODF))
-        weights[0] = 2.0  # weight hfc onsets a bit stronger
+        weights[0] = 3.0  # weight hfc onsets a bit stronger
 
         self.weights = weights.astype(numpy.single)
 
@@ -304,15 +232,11 @@ class OnsetGenerator:
         return self.onsets(matrix, self.weights)
 
 
-def get_consensus_beats(all_beats, max_consensus, beat_near_threshold, consensus_ratio):
-    # no point getting a consensus of a single algorithm
-    if max_consensus == 1:
-        return all_beats
-
+def get_consensus_beats(all_beats, beat_near_threshold, consensus):
     good_beats = numpy.sort(numpy.unique(all_beats))
     grouped_beats = numpy.split(
         good_beats,
-        numpy.where(numpy.diff(good_beats) ** 2 > beat_near_threshold)[0] + 1,
+        numpy.where(numpy.diff(good_beats) > beat_near_threshold)[0] + 1,
     )
 
     beats = [x[0] for x in grouped_beats]
@@ -323,38 +247,10 @@ def get_consensus_beats(all_beats, max_consensus, beat_near_threshold, consensus
     final_beats = []
     for i, tick in enumerate(beats):
         # at least CONSENSUS beat trackers agree
-        if tick_agreements[i] > max_consensus * consensus_ratio:
+        if tick_agreements[i] >= consensus:
             final_beats.append(tick)
 
     return final_beats
-
-
-# apply beat tracking to the song within the bounds of an inconclusive segment
-def segmented_beat_tracking(
-    x, pool, beat_tracking_algorithms, segment_begin, segment_end
-):
-    chunk_begin = int(segment_begin * 44100.0)
-    chunk_end = int(segment_end * 44100.0)
-
-    # need a consensus across all algorithms
-    all_beats = numpy.array([])
-
-    print("applying segmented beat tracking with increment: {0}".format(segment_begin))
-
-    beat_results = pool.starmap(
-        apply_single_beat_tracker,
-        zip(
-            itertools.repeat(x[chunk_begin:chunk_end]),
-            beat_tracking_algorithms,
-            itertools.repeat(segment_begin),
-        ),
-    )
-
-    for beats in beat_results:
-        all_beats = numpy.concatenate((all_beats, beats))
-
-    all_beats = numpy.sort(all_beats)
-    return all_beats
 
 
 def align_beats_onsets(beats, onsets, thresh):
@@ -383,11 +279,15 @@ def align_beats_onsets(beats, onsets, thresh):
     return aligned_beats
 
 
-def apply_meta_algorithm(prog):
+def apply_meta_algorithm(x, args):
+    pool = multiprocessing.Pool(args.n_pool)
+    beat_tracking_algorithms = [int(x) for x in args.algorithms.split(",")]
+
+    print("Applying all beat trackers in parallel: {0}".format(args.algorithms))
     # gather all the beats from all beat tracking algorithms
-    beat_results = prog.pool.starmap(
+    beat_results = pool.starmap(
         apply_single_beat_tracker,
-        zip(itertools.repeat(prog.x), prog.beat_tracking_algorithms),
+        zip(itertools.repeat(x), beat_tracking_algorithms),
     )
 
     # need a consensus across all algorithms
@@ -396,80 +296,99 @@ def apply_meta_algorithm(prog):
     for beats in beat_results:
         all_beats = numpy.concatenate((all_beats, beats))
 
+    all_beats = numpy.sort(all_beats)
+
+    total = len(beat_tracking_algorithms)
+    consensus = int(numpy.ceil(args.consensus_ratio * total))
+
+    print(
+        "Applying beat consensus to get agreed beats: need {0} / {1} agreements".format(
+            consensus, total
+        )
+    )
+    beat_consensus = get_consensus_beats(
+        all_beats,
+        args.beat_near_threshold,
+        consensus,
+    )
+
+    print(
+        "Creating percussive separation with enhanced transients for percussive onset detection"
+    )
     # get a percussive separation for onset alignment
     _, xp = ihpss(
-        prog.x,
+        x,
         # hpss params
         (
-            prog.harmonic_frame,
-            prog.harmonic_beta,
-            prog.percussive_frame,
-            prog.percussive_beta,
+            args.harmonic_frame,
+            args.harmonic_margin,
+            args.percussive_frame,
+            args.percussive_margin,
         ),
         # transient shaper params
         (
-            prog.fast_attack_ms,
-            prog.slow_attack_ms,
-            prog.release_ms,
-            prog.power_memory_ms,
+            args.fast_attack_ms,
+            args.slow_attack_ms,
+            args.release_ms,
+            args.power_memory_ms,
         ),
-        prog.pool,
+        pool,
     )
 
-    all_beats = numpy.sort(all_beats)
+    print("Detecting percussive onsets with methods {0}".format(ODF))
+    onsets = OnsetGenerator(args.onset_silence_threshold).get_onsets(xp, pool)
 
-    beat_consensus = get_consensus_beats(
-        all_beats,
-        len(prog.beat_tracking_algorithms),
-        prog.beat_near_threshold,
-        prog.consensus_ratio,
-    )
+    print("Aligning agreed beats with percussive onsets")
+    aligned = align_beats_onsets(beat_consensus, onsets, args.beat_near_threshold)
 
-    onsets = OnsetGenerator(prog.onset_silence_threshold).get_onsets(xp, prog.pool)
-    aligned = align_beats_onsets(beat_consensus, onsets, prog.beat_near_threshold)
-
+    print("Trying to substitute percussive onsets in place of absent beats")
     # add a 0 in there in case no beats have been found until the first, very deep into the song
     # also concatenate the max length for that case too
+    endofsong = (len(x) - 1) / 44100.0
 
-    endofsong = (len(prog.x) - 1) / 44100.0
+    aligned_prime = numpy.concatenate(([0.0], aligned, [endofsong]))
 
-    beat_jumps = numpy.where(
-        numpy.diff(numpy.concatenate(([0.0], aligned, [endofsong]))) > prog.max_no_beats
-    )[0]
+    beat_jumps = numpy.where(numpy.diff(aligned_prime) > args.max_no_beats)[0]
+
     to_concat = numpy.array([])
 
     # collect extra beats by applying consensus beat tracking specifically to low-information segments
     for j in beat_jumps:
         try:
-            print("segment with no beats: {0}-{1}".format(aligned[j], aligned[j + 1]))
+            print(
+                "segment with no beats: {0}-{1}".format(
+                    aligned_prime[j], aligned_prime[j + 1]
+                )
+            )
 
             segment_onsets = onsets[
                 numpy.where(
                     numpy.logical_and(
-                        onsets > aligned[j] + 1.0, onsets < aligned[j + 1] - 1.0
+                        onsets > aligned_prime[j] + 1.0,
+                        onsets < aligned_prime[j + 1] - 1.0,
                     )
                 )[0]
             ]
 
-            spread_onsets = numpy.split(
+            sparse_onsets = numpy.split(
                 segment_onsets,
-                numpy.where(
-                    numpy.diff(segment_onsets) ** 2 > prog.onset_near_threshold
-                )[0]
+                numpy.where(numpy.diff(segment_onsets) > args.onset_near_threshold)[0]
                 + 1,
             )
 
-            so = [s[0] for s in spread_onsets if s.size > 0]
+            so = [s[0] for s in sparse_onsets if s.size > 0]
 
-            print(
-                "supplementing with percussive onsets from this region: {0}".format(so)
-            )
-            to_concat = numpy.concatenate((to_concat, so))
+            if so:
+                print(
+                    "supplementing with percussive onsets from this region: {0}".format(
+                        so
+                    )
+                )
+                to_concat = numpy.concatenate((to_concat, so))
         except IndexError:
             break
 
     aligned = numpy.sort(numpy.concatenate((aligned, to_concat)))
-
     return aligned
 
 
@@ -612,6 +531,11 @@ def ihpss(x, hpss_params, transient_shaper_params, pool):
     percussive_frame = hpss_params[2]
     percussive_beta = hpss_params[3]
 
+    print(
+        "Iteration 1 of hpss: frame = {0}, margin = {1}".format(
+            harmonic_frame, harmonic_beta
+        )
+    )
     # big t-f resolution for harmonic
     S1 = stft(
         x,
@@ -626,6 +550,11 @@ def ihpss(x, hpss_params, transient_shaper_params, pool):
     yp1 = fix_length(istft(S_p1, dtype=x.dtype), len(x))
     yr1 = fix_length(istft(S_r1, dtype=x.dtype), len(x))
 
+    print(
+        "Iteration 2 of hpss: frame = {0}, margin = {1}".format(
+            percussive_frame, percussive_beta
+        )
+    )
     # small t-f resolution for percussive
     S2 = stft(
         yp1 + yr1,
@@ -637,6 +566,7 @@ def ihpss(x, hpss_params, transient_shaper_params, pool):
 
     yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
 
+    print("Applying multiband transient shaper")
     yp = multiband_transient_shaper(
         yp,
         44100,
