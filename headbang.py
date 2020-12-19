@@ -178,7 +178,6 @@ def apply_single_beat_tracker(x, beat_algo, frame_offset=0):
             sys.exit(1)
         beats = btrack.trackBeats(x)
 
-    print('beat algo:\n\t{0}\n\t{1}\n'.format(beat_algo, beats))
     return beats + frame_offset
 
 
@@ -203,12 +202,14 @@ class OnsetGenerator:
         self.pool = essentia.Pool()
         self.onsets = Onsets(silenceThreshold=silence_threshold)
 
-        weights = numpy.ones(len(ODF))
-        weights[0] = 3.0  # weight hfc onsets a bit stronger
+        weights = numpy.ones(len(ODF)+2) # add 2 for kick-snare
+        weights[0] = 3.0  # weight hfc and kick-snare stronger
+        #weights[-1] = 3.0  # weight hfc onsets a bit stronger
+        #weights[-2] = 3.0  # weight hfc onsets a bit stronger
 
         self.weights = weights.astype(numpy.single)
 
-    def get_onsets(self, x, pool):
+    def get_onsets(self, x, pool, kicksnare_odf):
         # Computing onset detection functions.
         for frame in FrameGenerator(
             x.astype(numpy.single), frameSize=1024, hopSize=512
@@ -228,6 +229,7 @@ class OnsetGenerator:
             essentia.array(self.pool["features.{0}".format(ODF[i])])
             for i in range(len(ODF))
         ]
+        matrix = numpy.concatenate((matrix, kicksnare_odf))
 
         return self.onsets(matrix, self.weights)
 
@@ -302,21 +304,10 @@ def apply_meta_algorithm(x, args):
     consensus = int(numpy.ceil(args.consensus_ratio * total))
 
     print(
-        "Applying beat consensus to get agreed beats: need {0} / {1} agreements".format(
-            consensus, total
-        )
-    )
-    beat_consensus = get_consensus_beats(
-        all_beats,
-        args.beat_near_threshold,
-        consensus,
-    )
-
-    print(
         "Creating percussive separation with enhanced transients for percussive onset detection"
     )
-    # get a percussive separation for onset alignment
-    _, xp = ihpss(
+    # get a percussive separation for onset alignment, and the percussive spectrum
+    xp, Sp = ihpss(
         x,
         # hpss params
         (
@@ -335,8 +326,22 @@ def apply_meta_algorithm(x, args):
         pool,
     )
 
-    print("Detecting percussive onsets with methods {0}".format(ODF))
-    onsets = OnsetGenerator(args.onset_silence_threshold).get_onsets(xp, pool)
+    print("Detecting kick-snare onsets from percussive spectrogram")
+    kicksnare_onsets = KickSnareOnsetGenerator(args.onset_silence_threshold).get_odf(Sp)
+
+    print(
+        "Applying beat consensus to get agreed beats: need {0} / {1} agreements".format(
+            consensus, total
+        )
+    )
+    beat_consensus = get_consensus_beats(
+        all_beats,
+        args.beat_near_threshold,
+        consensus,
+    )
+
+    print("Detecting percussive onsets with methods {0} + kick-snare".format(ODF))
+    onsets = OnsetGenerator(args.onset_silence_threshold).get_onsets(xp, pool, kicksnare_onsets)
 
     print("Aligning agreed beats with percussive onsets")
     aligned = align_beats_onsets(beat_consensus, onsets, args.beat_near_threshold)
@@ -564,6 +569,20 @@ def ihpss(x, hpss_params, transient_shaper_params, pool):
     )
     _, S_p2 = hpss(S2, margin=percussive_beta, power=numpy.inf)  # hard mask
 
+    print(
+        "Iteration 2.5 of hpss: frame = 1024, margin = {0} (for kick-snare onsets)".format(
+            percussive_beta
+        )
+    )
+    # medium t-f resolution for kick-snare onsets
+    S3 = stft(
+        yp1 + yr1,
+        n_fft=2048,
+        win_length=1024,
+        hop_length=512,
+    )
+    _, S_p3 = hpss(S3, margin=percussive_beta, power=numpy.inf)  # hard mask
+
     yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
 
     print("Applying multiband transient shaper")
@@ -574,7 +593,40 @@ def ihpss(x, hpss_params, transient_shaper_params, pool):
         pool,
     )
 
-    return yh, yp
+    return yp, S_p3
+
+
+class KickSnareOnsetGenerator:
+    def __init__(self, silence_threshold):
+        self.pool = essentia.Pool()
+        self.onsets = Onsets(silenceThreshold=silence_threshold)
+        self.weights = [1, 1]
+
+    def get_odf(self, percussive_stft):
+        for i, fft in enumerate(percussive_stft.T):
+            dT = 2048/44100.0
+
+            kick_idx = (0, int(120.0*dT)) # 0-120hz for the kick
+            snare_idx = (int(200.0*dT), int(500.0*dT)) # 200-500hz for the snare
+
+            # sum of magnitude of kick and snare frequency ranges
+            kick = numpy.sum(numpy.abs(fft[kick_idx[0]:kick_idx[1]])**2)
+            snare = numpy.sum(numpy.abs(fft[snare_idx[0]:snare_idx[1]])**2)
+
+            self.pool.add("features.kick", kick)
+            self.pool.add("features.snare", snare)
+
+        # add an extra frame so it can be appended to the other onset detection object
+        self.pool.add("features.kick", 0)
+        self.pool.add("features.snare", 0)
+
+        # convert pool into matrix
+        matrix = [
+            essentia.array(self.pool["features.kick"]),
+            essentia.array(self.pool["features.snare"]),
+        ]
+        return matrix
+
 
 
 if __name__ == "__main__":
