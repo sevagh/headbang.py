@@ -9,12 +9,9 @@ Instructions for how to install the dependencies and run headbang.py are in [the
 ### Examples
 
 I can't include full songs due to copyright issues. Here are 3 excerpts of good outputs from headbang.py (using the default settings) on some songs:
-
-* Accurate tracking during accented off-beats in Periphery - The Bad Thing:
-
-* Accurate clicks across a time signature/tempo transition in Periphery - Omega:
-
-* Stable clicks throughout an action-packed section of Kadinja - GLHF:
+* [Periphery - The Bad Thing](./example_bad_thing.wav) - accurate tracking during accented off-beats 
+* [Periphery - Omega](./example_omega.wav) - accurate clicks across a time signature/tempo transition
+* [Kadinja - GLHF](./example_glhf.wav) - stable clicks throughout an action-packed section
 
 ### Algorithm
 
@@ -33,9 +30,14 @@ Note that the plots were generated with a small segment (10s) extracted from a f
 ![input_waveform_all_beats](./input_waveform_all_beats.png)
 
 The list of beat trackers is:
-1. Madmom
-2. Madmom
-2. Madmom
+1. [madmom](https://madmom.readthedocs.io/en/latest/modules/features/beats.html) RNNBeatProcessor -> DBNBeatTrackingProcessor
+2. madmom RNNBeatProcessor -> BeatTrackingProcessor
+3. madmom RNNBeatProcessor -> CRFBeatDetectionProcessor
+4. madmom RNNBeatProcessor -> BeatDetectionProcessor
+5. [Essentia BeatTrackerMultiFeature](https://essentia.upf.edu/reference/std_BeatTrackerMultiFeature.html)
+6. [Essentia BeatTrackerDegara](https://essentia.upf.edu/reference/std_BeatTrackerDegara.html)
+7. [librosa beat_track](https://librosa.org/doc/latest/generated/librosa.beat.beat_track.html)
+8. [BTrack](https://github.com/adamstark/BTrack)
 
 #### "True beats" are chosen by consensus
 

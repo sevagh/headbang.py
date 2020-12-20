@@ -12,6 +12,8 @@ The result is achieved by considering a consensus or ensemble of the outputs fro
 
 The algorithm is described in more detail, and with helpful visuals, on the project's github-pages site: https://sevagh.github.io/headbang.py
 
+**nb** For a strange reason, I get significantly worse outputs from my laptop compared to my desktop. I'll need to investigate more. If you feel that you're getting totally inaccurate results, let me know by opening an issue.
+
 ## Installation and usage
 
 headbang.py has been written and verified with Python 3.8 on AMD64 machines running Fedora 32 Linux. However, there shouldn't be any problems running it on different machines if the requirements can be successfully installed.
@@ -26,6 +28,8 @@ sevagh:python-module $ python3.8 setup.py build
 # install to your system
 sevagh:python-module $ sudo python3.8 setup.py install
 
+# OR #
+
 # install for your local user
 sevagh:python-module $ pip3.8 install --user -e .
 ```
@@ -39,83 +43,3 @@ You can choose to omit BTrack (and run the program without `--algorithm 8`), but
 More beat trackers are always welcome. The results would probably get better if more diverse beat trackers are added to the group.
 
 There are many arguments, but for a prog metal song, you should be fine with the defaults. Of course, I always encourage experimentation. The [github-pages site](https://sevagh.github.io/headbang.py) should provide clarity on which part of the algorithm is affected by the various input arguments.
-
-```
-sevagh:headbang.py $ pip install --user -r ./requirements.txt
-sevagh:headbang.py $ ./headbang.py --help
-[   INFO   ] MusicExtractorSVM: no classifier models were configured by default
-usage: headbang.py [-h] [--algorithms ALGORITHMS]
-                   [--beat-near-threshold BEAT_NEAR_THRESHOLD]
-                   [--consensus-ratio CONSENSUS_RATIO]
-                   [--max-no-beats MAX_NO_BEATS]
-                   [--onset-near-threshold ONSET_NEAR_THRESHOLD]
-                   [--onset-silence-threshold ONSET_SILENCE_THRESHOLD]
-                   [--harmonic-margin HARMONIC_MARGIN]
-                   [--harmonic-frame HARMONIC_FRAME]
-                   [--percussive-margin PERCUSSIVE_MARGIN]
-                   [--percussive-frame PERCUSSIVE_FRAME]
-                   [--fast-attack-ms FAST_ATTACK_MS]
-                   [--slow-attack-ms SLOW_ATTACK_MS]
-                   [--release-ms RELEASE_MS]
-                   [--power-memory-ms POWER_MEMORY_MS] [--n-pool N_POOL]
-                   [--show-plots]
-                   wav_in wav_out
-
-Accurate percussive beat tracking for metal songs
-
-positional arguments:
-  wav_in                input wav file
-  wav_out               output wav file
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --n-pool N_POOL       How many threads to use in multiprocessing pool
-                        (default: 7)
-  --show-plots          Display plots of intermediate steps describing the
-                        algorithm using matplotlib (default: False)
-
-beat arguments:
-  --algorithms ALGORITHMS
-                        List of beat tracking algorithms to apply. Btrack
-                        omitted by default (default: 1,2,3,4,5,6,7)
-  --beat-near-threshold BEAT_NEAR_THRESHOLD
-                        How close beats should be in seconds to be considered
-                        the same beat (default: 0.1)
-  --consensus-ratio CONSENSUS_RATIO
-                        How many (out of the maximum possible) beat locations
-                        should agree (default: 0.5)
-
-onsets arguments:
-  --max-no-beats MAX_NO_BEATS
-                        Segments with missing beats to substitute onsets
-                        (default: 2.0)
-  --onset-near-threshold ONSET_NEAR_THRESHOLD
-                        How close onsets should be in seconds when
-                        supplementing onset information (default: 0.1)
-  --onset-silence-threshold ONSET_SILENCE_THRESHOLD
-                        Silence threshold (default: 0.035)
-
-hpss arguments:
-  --harmonic-margin HARMONIC_MARGIN
-                        Separation margin for HPSS harmonic iteration
-                        (default: 2.0)
-  --harmonic-frame HARMONIC_FRAME
-                        T-F/frame size for HPSS harmonic iteration (default:
-                        4096)
-  --percussive-margin PERCUSSIVE_MARGIN
-                        Separation margin for HPSS percussive iteration
-                        (default: 2.0)
-  --percussive-frame PERCUSSIVE_FRAME
-                        T-F/frame size for HPSS percussive iteration
-                        (default: 256)
-
-transient shaper arguments:
-  --fast-attack-ms FAST_ATTACK_MS
-                        Fast attack (ms) (default: 1)
-  --slow-attack-ms SLOW_ATTACK_MS
-                        Slow attack (ms) (default: 15)
-  --release-ms RELEASE_MS
-                        Release (ms) (default: 20)
-  --power-memory-ms POWER_MEMORY_MS
-                        Power filter memory (ms) (default: 1)
-```
