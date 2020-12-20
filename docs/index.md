@@ -47,7 +47,7 @@ A true beat is marked when 4 out of the 8 beat trackers agree (i.e. `--consensus
 
 #### Percussive onsets
 
-Separately, the percussive component of the input signal is separated with [median-filtering](https://librosa.org/doc/0.8.0/generated/librosa.decompose.hpss.html):
+To find percussive onsets, first the percussive component of the input signal is separated with [median-filtering](https://librosa.org/doc/0.8.0/generated/librosa.decompose.hpss.html):
 
 ![percussive_hpss](percussive_hpss.png)
 
