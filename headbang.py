@@ -27,7 +27,6 @@ import multiprocessing
 from librosa.decompose import hpss
 from librosa.core import stft, istft
 from librosa.util import fix_length
-import matplotlib
 
 
 def load_wav(wav_in):
@@ -58,7 +57,7 @@ def main():
         "--algorithms",
         type=str,
         default="1,2,3,4,5,6,7,8",
-        help="List of beat tracking algorithms to apply. Btrack omitted by default",
+        help="List of beat tracking algorithms to apply",
     )
     beat_args.add_argument(
         "--beat-near-threshold",
@@ -128,7 +127,6 @@ def main():
         "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
     )
 
-    # generic arguments
     parser.add_argument(
         "--n-pool",
         type=int,
@@ -140,36 +138,29 @@ def main():
         action="store_true",
         help="Display plots of intermediate steps describing the algorithm using matplotlib",
     )
+    parser.add_argument(
+        "--beats-out", type=str, default="", help="output beats txt file"
+    )
 
     parser.add_argument("wav_in", help="input wav file")
     parser.add_argument("wav_out", help="output wav file")
-    parser.add_argument("beats_out", help="output beats txt file")
 
     args = parser.parse_args()
 
     print("Loading file {0} with 44100 sampling rate".format(args.wav_in))
     x = load_wav(args.wav_in)
 
-    if args.show_plots:
-        timestamps = [i / 44100.0 for i in range(len(x))]
-        plt.figure(1)
-        plt.title("Input waveform")
-        plt.plot(timestamps, x)
-        plt.xlabel("time (seconds)")
-        plt.ylabel("amplitude")
-        plt.show()
-
     print("Applying meta algorithm")
     beats = apply_meta_algorithm(x, args)
 
-    print("Writing beat locations to file {0}".format(args.beats_out))
-    with open(args.beats_out, "w") as f:
-        for b in beats:
-            f.write(f"{b}\n")
+    if args.beats_out:
+        print("Writing beat locations to file {0}".format(args.beats_out))
+        with open(args.beats_out, "w") as f:
+            for b in beats:
+                f.write(f"{b}\n")
 
     print("Overlaying clicks at beat locations")
     clicks = librosa.clicks(beats, sr=44100, length=len(x))
-
     final_waveform = (x + clicks).astype(numpy.single)
 
     print("Writing output with clicks to {0}".format(args.wav_out))
@@ -214,7 +205,10 @@ c2p = CartesianToPolar()
 
 
 def apply_single_odf(odf_idx, frame):
-    (mag, phase,) = c2p(fft(w(frame.astype(numpy.single))))
+    (
+        mag,
+        phase,
+    ) = c2p(fft(w(frame.astype(numpy.single))))
     return ONSET_DETECTORS[odf_idx](mag, phase)
 
 
@@ -234,7 +228,11 @@ class OnsetGenerator:
             x.astype(numpy.single), frameSize=1024, hopSize=512
         ):
             onset_features = pool.starmap(
-                apply_single_odf, zip(range(len(ODF)), itertools.repeat(frame),),
+                apply_single_odf,
+                zip(
+                    range(len(ODF)),
+                    itertools.repeat(frame),
+                ),
             )
             for i, of in enumerate(onset_features):
                 self.pool.add("features.{0}".format(ODF[i]), of)
@@ -251,7 +249,8 @@ class OnsetGenerator:
 def get_consensus_beats(all_beats, beat_near_threshold, consensus):
     good_beats = numpy.sort(numpy.unique(all_beats))
     grouped_beats = numpy.split(
-        good_beats, numpy.where(numpy.diff(good_beats) > beat_near_threshold)[0] + 1,
+        good_beats,
+        numpy.where(numpy.diff(good_beats) > beat_near_threshold)[0] + 1,
     )
 
     beats = [x[0] for x in grouped_beats]
@@ -301,7 +300,8 @@ def apply_meta_algorithm(x, args):
     print("Applying all beat trackers in parallel: {0}".format(args.algorithms))
     # gather all the beats from all beat tracking algorithms
     beat_results = pool.starmap(
-        apply_single_beat_tracker, zip(itertools.repeat(x), beat_tracking_algorithms),
+        apply_single_beat_tracker,
+        zip(itertools.repeat(x), beat_tracking_algorithms),
     )
 
     # need a consensus across all algorithms
@@ -312,23 +312,6 @@ def apply_meta_algorithm(x, args):
 
     all_beats = numpy.sort(all_beats)
 
-    if args.show_plots:
-        timestamps = [i / 44100.0 for i in range(len(x))]
-        plt.figure(1)
-        plt.title("Input waveform with all beats")
-        plt.plot(timestamps, x)
-        plt.xlabel("time (seconds)")
-        plt.ylabel("amplitude")
-        for beats in beat_results:
-            plt.plot(
-                beats,
-                numpy.zeros(len(beats)),
-                marker="o",
-                linestyle="None",
-                markersize=10,
-            )
-        plt.show()
-
     total = len(beat_tracking_algorithms)
     consensus = int(numpy.ceil(args.consensus_ratio * total))
 
@@ -336,7 +319,7 @@ def apply_meta_algorithm(x, args):
         "Creating percussive separation with enhanced transients for percussive onset detection"
     )
     # get a percussive separation for onset alignment, and the percussive spectrum
-    xp = ihpss(
+    xp, xp_hpss = ihpss(
         x,
         # hpss params
         (
@@ -353,7 +336,6 @@ def apply_meta_algorithm(x, args):
             args.power_memory_ms,
         ),
         pool,
-        args.show_plots,
     )
 
     print(
@@ -362,47 +344,13 @@ def apply_meta_algorithm(x, args):
         )
     )
     beat_consensus = get_consensus_beats(
-        all_beats, args.beat_near_threshold, consensus,
+        all_beats,
+        args.beat_near_threshold,
+        consensus,
     )
-
-    if args.show_plots:
-        timestamps = [i / 44100.0 for i in range(len(x))]
-        plt.figure(1)
-        plt.title("Input waveform with beat consensus")
-        plt.plot(timestamps, x)
-        plt.xlabel("time (seconds)")
-        plt.ylabel("amplitude")
-        plt.plot(
-            beat_consensus,
-            numpy.zeros(len(beat_consensus)),
-            marker="o",
-            linestyle="None",
-            color="red",
-            markersize=10,
-        )
-        plt.legend(["waveform", "beats"])
-        plt.show()
 
     print("Detecting percussive onsets with methods {0}".format(ODF))
     onsets = OnsetGenerator(args.onset_silence_threshold).get_onsets(xp, pool)
-
-    if args.show_plots:
-        timestamps = [i / 44100.0 for i in range(len(x))]
-        plt.figure(1)
-        plt.title("Percussive-attack-enhanced waveform with onsets")
-        plt.plot(timestamps, xp)
-        plt.xlabel("time (seconds)")
-        plt.ylabel("amplitude")
-        plt.plot(
-            onsets,
-            numpy.zeros(len(onsets)),
-            marker="o",
-            linestyle="None",
-            color="orange",
-            markersize=10,
-        )
-        plt.legend(["waveform", "onsets"])
-        plt.show()
 
     print("Aligning agreed beats with percussive onsets")
     aligned = align_beats_onsets(beat_consensus, onsets, args.beat_near_threshold)
@@ -454,59 +402,12 @@ def apply_meta_algorithm(x, args):
         except IndexError:
             break
 
-    if args.show_plots:
-        timestamps = [i / 44100.0 for i in range(len(x))]
-        plt.figure(1)
-        plt.title("Waveform with onset-aligned beats")
-        plt.plot(timestamps, x)
-        plt.xlabel("time (seconds)")
-        plt.ylabel("amplitude")
-        plt.plot(
-            aligned,
-            numpy.zeros(len(aligned)),
-            marker="o",
-            linestyle="None",
-            color="red",
-            markersize=5,
-        )
-        plt.plot(
-            onsets,
-            numpy.zeros(len(onsets)),
-            marker="x",
-            linestyle="None",
-            color="orange",
-            markersize=10,
-        )
-        plt.legend(["waveform", "beats", "onsets"])
-        plt.show()
-
-    if args.show_plots and to_concat.size > 0:
-        timestamps = [i / 44100.0 for i in range(len(x))]
-        plt.figure(1)
-        plt.title("Waveform with aligned beats and supplemented onsets")
-        plt.plot(timestamps, x)
-        plt.xlabel("time (seconds)")
-        plt.ylabel("amplitude")
-        plt.plot(
-            aligned,
-            numpy.zeros(len(aligned)),
-            marker="o",
-            linestyle="None",
-            color="red",
-            markersize=10,
-        )
-        plt.plot(
-            to_concat,
-            numpy.zeros(len(to_concat)),
-            marker="o",
-            linestyle="None",
-            color="orange",
-            markersize=10,
-        )
-        plt.legend(["waveform", "beats", "onsets"])
-        plt.show()
-
     aligned = numpy.sort(numpy.concatenate((aligned, to_concat)))
+
+    if args.show_plots:
+        generate_all_plots(
+            x, beat_results, beat_consensus, onsets, xp, xp_hpss, aligned, to_concat
+        )
 
     return aligned
 
@@ -644,7 +545,7 @@ def multiband_transient_shaper(x, fs, shaper_params, pool):
 
 
 # iterative hpss
-def ihpss(x, hpss_params, transient_shaper_params, pool, show_plots):
+def ihpss(x, hpss_params, transient_shaper_params, pool):
     harmonic_frame = hpss_params[0]
     harmonic_beta = hpss_params[1]
     percussive_frame = hpss_params[2]
@@ -686,25 +587,137 @@ def ihpss(x, hpss_params, transient_shaper_params, pool, show_plots):
     yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
 
     print("Applying multiband transient shaper")
-    yp_tshaped = multiband_transient_shaper(yp, 44100, transient_shaper_params, pool,)
+    yp_tshaped = multiband_transient_shaper(
+        yp,
+        44100,
+        transient_shaper_params,
+        pool,
+    )
 
-    if show_plots:
-        timestamps = [i / 44100.0 for i in range(len(x))]
+    return yp_tshaped, yp
+
+
+def generate_all_plots(
+    x, beat_results, beat_consensus, onsets, xp, xp_hpss, aligned, to_concat
+):
+    timestamps = [i / 44100.0 for i in range(len(x))]
+
+    plt.figure(1)
+    plt.title("Input waveform")
+    plt.plot(timestamps, x)
+    plt.xlabel("time (seconds)")
+    plt.ylabel("amplitude")
+    plt.show()
+
+    plt.figure(1)
+    plt.title("Input waveform with all beats")
+    plt.plot(timestamps, x)
+    plt.xlabel("time (seconds)")
+    plt.ylabel("amplitude")
+    for beats in beat_results:
+        plt.plot(
+            beats,
+            numpy.zeros(len(beats)),
+            marker="o",
+            linestyle="None",
+            markersize=10,
+        )
+    plt.show()
+
+    plt.figure(1)
+    plt.title("Input waveform with beat consensus")
+    plt.plot(timestamps, x)
+    plt.xlabel("time (seconds)")
+    plt.ylabel("amplitude")
+    plt.plot(
+        beat_consensus,
+        numpy.zeros(len(beat_consensus)),
+        marker="o",
+        linestyle="None",
+        color="red",
+        markersize=10,
+    )
+    plt.legend(["waveform", "beats"])
+    plt.show()
+
+    plt.figure(1)
+    plt.title("Percussive-attack-enhanced waveform with onsets")
+    plt.plot(timestamps, xp)
+    plt.xlabel("time (seconds)")
+    plt.ylabel("amplitude")
+    plt.plot(
+        onsets,
+        numpy.zeros(len(onsets)),
+        marker="o",
+        linestyle="None",
+        color="orange",
+        markersize=10,
+    )
+    plt.legend(["waveform", "onsets"])
+    plt.show()
+
+    plt.figure(1)
+    plt.title("Waveform with onset-aligned beats")
+    plt.plot(timestamps, x)
+    plt.xlabel("time (seconds)")
+    plt.ylabel("amplitude")
+    plt.plot(
+        aligned,
+        numpy.zeros(len(aligned)),
+        marker="o",
+        linestyle="None",
+        color="red",
+        markersize=5,
+    )
+    plt.plot(
+        onsets,
+        numpy.zeros(len(onsets)),
+        marker="x",
+        linestyle="None",
+        color="orange",
+        markersize=10,
+    )
+    plt.legend(["waveform", "beats", "onsets"])
+    plt.show()
+
+    if to_concat.size > 0:
         plt.figure(1)
-        plt.title("Percussive separation after iterative HPSS")
-        plt.plot(timestamps, yp)
+        plt.title("Waveform with aligned beats and supplemented onsets")
+        plt.plot(timestamps, x)
         plt.xlabel("time (seconds)")
         plt.ylabel("amplitude")
+        plt.plot(
+            aligned,
+            numpy.zeros(len(aligned)),
+            marker="o",
+            linestyle="None",
+            color="red",
+            markersize=10,
+        )
+        plt.plot(
+            to_concat,
+            numpy.zeros(len(to_concat)),
+            marker="o",
+            linestyle="None",
+            color="orange",
+            markersize=10,
+        )
+        plt.legend(["waveform", "beats", "onsets"])
         plt.show()
 
-        plt.figure(1)
-        plt.title("Percussive separation with enhanced attacks")
-        plt.plot(timestamps, yp_tshaped)
-        plt.xlabel("time (seconds)")
-        plt.ylabel("amplitude")
-        plt.show()
+    plt.figure(1)
+    plt.title("Percussive separation after iterative HPSS")
+    plt.plot(timestamps, xp_hpss)
+    plt.xlabel("time (seconds)")
+    plt.ylabel("amplitude")
+    plt.show()
 
-    return yp_tshaped
+    plt.figure(1)
+    plt.title("Percussive separation with enhanced attacks")
+    plt.plot(timestamps, xp)
+    plt.xlabel("time (seconds)")
+    plt.ylabel("amplitude")
+    plt.show()
 
 
 if __name__ == "__main__":
