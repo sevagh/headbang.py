@@ -159,13 +159,6 @@ def main():
         plt.ylabel("amplitude")
         plt.show()
 
-        plt.figure(1)
-        plt.title("Input spectrogram")
-        _, _, _, im = plt.specgram(
-            x, Fs=44100, NFFT=1024, noverlap=512, cmap=plt.cm.bone
-        )
-        plt.show()
-
     print("Applying meta algorithm")
     beats = apply_meta_algorithm(x, args)
 
@@ -336,21 +329,6 @@ def apply_meta_algorithm(x, args):
             )
         plt.show()
 
-        plt.figure(1)
-        plt.title("Input spectrogram with all beats")
-        _, _, _, im = plt.specgram(
-            x, Fs=44100, NFFT=1024, noverlap=512, cmap=plt.cm.bone
-        )
-        for beats in beat_results:
-            plt.plot(
-                beats,
-                numpy.repeat(10000, len(beats)),
-                marker="o",
-                linestyle="None",
-                markersize=10,
-            )
-        plt.show()
-
     total = len(beat_tracking_algorithms)
     consensus = int(numpy.ceil(args.consensus_ratio * total))
 
@@ -424,21 +402,6 @@ def apply_meta_algorithm(x, args):
             markersize=10,
         )
         plt.legend(["waveform", "onsets"])
-        plt.show()
-
-        plt.figure(1)
-        plt.title("Percussive-attack-enhanced spectrogram with onsets")
-        _, _, _, im = plt.specgram(
-            x, Fs=44100, NFFT=1024, noverlap=512, cmap=plt.cm.bone
-        )
-        plt.plot(
-            onsets,
-            numpy.repeat(10000, len(onsets)),
-            marker="o",
-            linestyle="None",
-            color="orange",
-            markersize=10,
-        )
         plt.show()
 
     print("Aligning agreed beats with percussive onsets")
