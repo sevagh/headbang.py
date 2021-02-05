@@ -10,17 +10,14 @@ from essentia.standard import (
     BeatTrackerMultiFeature,
     BeatTrackerDegara,
 )
-from essentia import (
-    Pool,
-    array
-)
+from essentia import Pool, array
 
-'''
+"""
 these have to be global because they're not pickleable otherwise
 and can't be parallelized
-'''
+"""
 
-ODF = ['hfc', 'flux', 'rms']
+ODF = ["hfc", "flux", "rms"]
 _ONSET_DETECTORS = [OnsetDetection(method=f) for f in ODF]
 
 _w = Windowing(type="hann")
@@ -66,8 +63,7 @@ class OnsetDetector:
 
         # convert pool into matrix
         matrix = [
-            array(self.pool["features.{0}".format(ODF[i])])
-            for i in range(len(ODF))
+            array(self.pool["features.{0}".format(ODF[i])]) for i in range(len(ODF))
         ]
 
         return self.onsets(matrix, self.weights)

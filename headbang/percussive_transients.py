@@ -40,7 +40,9 @@ def _bandpass(lo, hi, x, fs, order):
     return lfilter(b, a, x)
 
 
-def _attack_envelope(x, fs, fast_attack_ms, slow_attack_ms, release_ms, power_memory_ms):
+def _attack_envelope(
+    x, fs, fast_attack_ms, slow_attack_ms, release_ms, power_memory_ms
+):
     g_fast = numpy.exp(-1.0 / (fs * fast_attack_ms / 1000.0))
     g_slow = numpy.exp(-1.0 / (fs * slow_attack_ms / 1000.0))
     g_release = numpy.exp(-1.0 / (fs * release_ms / 1000.0))
@@ -90,19 +92,39 @@ def _attack_envelope(x, fs, fast_attack_ms, slow_attack_ms, release_ms, power_me
     return x * attack_gain_curve
 
 
-def _single_band_transient_shaper(band, x, fs, fast_attack_ms, slow_attack_ms, release_ms, power_memory_ms, filter_order):
+def _single_band_transient_shaper(
+    band,
+    x,
+    fs,
+    fast_attack_ms,
+    slow_attack_ms,
+    release_ms,
+    power_memory_ms,
+    filter_order,
+):
     lo = _FREQ_BANDS[band]
     hi = _FREQ_BANDS[band + 1]
 
     y = _bandpass(lo, hi, x, fs, filter_order)
 
     # per bark band, apply a differential envelope attack/transient enhancer
-    y_shaped = _attack_envelope(y, fs, fast_attack_ms, slow_attack_ms, release_ms, power_memory_ms)
+    y_shaped = _attack_envelope(
+        y, fs, fast_attack_ms, slow_attack_ms, release_ms, power_memory_ms
+    )
 
     return y_shaped
 
 
-def _multiband_transient_shaper(x, fs, pool, fast_attack_ms, slow_attack_ms, release_ms, power_memory_ms, filter_order):
+def _multiband_transient_shaper(
+    x,
+    fs,
+    pool,
+    fast_attack_ms,
+    slow_attack_ms,
+    release_ms,
+    power_memory_ms,
+    filter_order,
+):
     # bark band decomposition
     band_results = list(
         pool.starmap(
@@ -128,8 +150,19 @@ def _multiband_transient_shaper(x, fs, pool, fast_attack_ms, slow_attack_ms, rel
 
 
 # iterative hpss
-def ihpss(x, pool, harmonic_margin=2.0, harmonic_frame=4096, percussive_margin=2.0, percussive_frame=256,
-        fast_attack_ms=1, slow_attack_ms=15, release_ms=20, power_memory_ms=1, filter_order=2):
+def ihpss(
+    x,
+    pool,
+    harmonic_margin=2.0,
+    harmonic_frame=4096,
+    percussive_margin=2.0,
+    percussive_frame=256,
+    fast_attack_ms=1,
+    slow_attack_ms=15,
+    release_ms=20,
+    power_memory_ms=1,
+    filter_order=2,
+):
     print(
         "Iteration 1 of hpss: frame = {0}, margin = {1}".format(
             harmonic_frame, harmonic_margin
@@ -165,13 +198,15 @@ def ihpss(x, pool, harmonic_margin=2.0, harmonic_frame=4096, percussive_margin=2
 
     yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
 
-    print("Applying multiband transient shaper:\n\tfast attack (ms) = {0},\n\tslow attack (ms) = {1},\n\trelease (ms) = {2},\n\tpower memory (ms) = {3},\n\tfilter order = {4}".format(
-        fast_attack_ms,
-        slow_attack_ms,
-        release_ms,
-        power_memory_ms,
-        filter_order,
-    ))
+    print(
+        "Applying multiband transient shaper:\n\tfast attack (ms) = {0},\n\tslow attack (ms) = {1},\n\trelease (ms) = {2},\n\tpower memory (ms) = {3},\n\tfilter order = {4}".format(
+            fast_attack_ms,
+            slow_attack_ms,
+            release_ms,
+            power_memory_ms,
+            filter_order,
+        )
+    )
     yp_tshaped = _multiband_transient_shaper(
         yp,
         44100,

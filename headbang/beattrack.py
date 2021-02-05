@@ -13,15 +13,15 @@ from librosa.beat import beat_track
 
 
 _algo_names = [
-        '_',
-        'madmom DBNBeatTrackingProcessor',
-        'madmom BeatTrackingProcessor',
-        'madmom CRFBeatDetectionProcessor',
-        'madmom BeatDetectionProcessor',
-        'essentia BeatTrackerMultiFeature',
-        'essentia BeatTrackerDegara',
-        'librosa beat_track',
-        'BTrack',
+    "_",
+    "madmom DBNBeatTrackingProcessor",
+    "madmom BeatTrackingProcessor",
+    "madmom CRFBeatDetectionProcessor",
+    "madmom BeatDetectionProcessor",
+    "essentia BeatTrackerMultiFeature",
+    "essentia BeatTrackerDegara",
+    "librosa beat_track",
+    "BTrack",
 ]
 
 
@@ -81,7 +81,13 @@ def get_consensus_beats(
 
 
 class ConsensusBeatTracker:
-    def __init__(self, pool, algorithms="1,2,3,4,5,6,7,8", beat_near_threshold_s=0.1, consensus_ratio=0.5):
+    def __init__(
+        self,
+        pool,
+        algorithms="1,2,3,4,5,6,7,8",
+        beat_near_threshold_s=0.1,
+        consensus_ratio=0.5,
+    ):
         self.pool = pool
         self.beat_tracking_algorithms = [int(x) for x in algorithms.split(",")]
         self.beat_near_threshold_s = beat_near_threshold_s
@@ -89,14 +95,21 @@ class ConsensusBeatTracker:
         self.total = len(self.beat_tracking_algorithms)
         self.consensus = int(numpy.ceil(consensus_ratio * self.total))
 
-
     def print_params(self):
-        print('Consensus beat tracker params:\n\talgos: {0}\n\tconsensus: {1:01d}/{2:01d}\n\tbeat near (s): {3:04f}'.format(
-            ',\n\t\t'.join([algo_name for i, algo_name in enumerate(_algo_names) if i in self.beat_tracking_algorithms]),
-            int(self.consensus),
-            int(self.total),
-            self.beat_near_threshold_s,
-        ))
+        print(
+            "Consensus beat tracker params:\n\talgos: {0}\n\tconsensus: {1:01d}/{2:01d}\n\tbeat near (s): {3:04f}".format(
+                ",\n\t\t".join(
+                    [
+                        algo_name
+                        for i, algo_name in enumerate(_algo_names)
+                        if i in self.beat_tracking_algorithms
+                    ]
+                ),
+                int(self.consensus),
+                int(self.total),
+                self.beat_near_threshold_s,
+            )
+        )
 
     def beats(self, x):
         # gather all the beats from all beat tracking algorithms

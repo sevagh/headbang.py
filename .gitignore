@@ -8,3 +8,4 @@ __pycache__
 *.webm
 /*.png
 docs/_site
+/build

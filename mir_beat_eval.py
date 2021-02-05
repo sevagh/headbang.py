@@ -24,14 +24,12 @@ def precision_recall(reference_beats, estimated_beats, f_measure_threshold=0.07)
     mir_eval_beat.validate(reference_beats, estimated_beats)
     # When estimated beats are empty, no beats are correct; metric is 0
     if estimated_beats.size == 0 or reference_beats.size == 0:
-        return (0., 0.)
+        return (0.0, 0.0)
     # Compute the best-case matching between reference and estimated locations
-    matching = util.match_events(reference_beats,
-                                 estimated_beats,
-                                 f_measure_threshold)
+    matching = util.match_events(reference_beats, estimated_beats, f_measure_threshold)
 
-    precision = float(len(matching))/len(estimated_beats)
-    recall = float(len(matching))/len(reference_beats)
+    precision = float(len(matching)) / len(estimated_beats)
+    recall = float(len(matching)) / len(reference_beats)
     return precision, recall
 
 
@@ -129,7 +127,15 @@ def main():
         total_results[seq, :, :] = eval_beats(x, ground_truth)
         seq += 1
 
-    headers = ["algorithm", "F-measure", "Cemgil", "Goto", "McKinney P-score", "Precision", "Recall"]
+    headers = [
+        "algorithm",
+        "F-measure",
+        "Cemgil",
+        "Goto",
+        "McKinney P-score",
+        "Precision",
+        "Recall",
+    ]
     algos = ["SB1", "consensus", "headbang"]
     table = []
 

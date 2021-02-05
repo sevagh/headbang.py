@@ -35,7 +35,7 @@ class HeadbangBeatTracker:
         self,
         pool,
         # consensus beat tracking params
-        algorithms='1,2,3,4,5,6,7,8',
+        algorithms="1,2,3,4,5,6,7,8",
         beat_near_threshold_s=0.1,
         consensus_ratio=0.5,
         # onset alignment params
@@ -61,15 +61,15 @@ class HeadbangBeatTracker:
 
         self.pool = pool
         self.cbt = ConsensusBeatTracker(
-                        self.pool,
-                        algorithms=algorithms,
-                        beat_near_threshold_s=beat_near_threshold_s,
-                        consensus_ratio=consensus_ratio
-                    )
+            self.pool,
+            algorithms=algorithms,
+            beat_near_threshold_s=beat_near_threshold_s,
+            consensus_ratio=consensus_ratio,
+        )
 
         self.cbt.print_params()
         self.onset_detector = OnsetDetector(onset_silence_threshold)
-        self.disable_onsets=disable_onsets
+        self.disable_onsets = disable_onsets
 
         self.harmonic_margin = harmonic_margin
         self.harmonic_frame = harmonic_frame
@@ -111,7 +111,9 @@ class HeadbangBeatTracker:
         self.onsets = self.onset_detector.detect_onsets(self.xp, self.pool)
 
         print("Aligning agreed beats with percussive onsets")
-        self.aligned = align_beats_onsets(self.beat_consensus, self.onsets, self.beat_near_threshold_s)
+        self.aligned = align_beats_onsets(
+            self.beat_consensus, self.onsets, self.beat_near_threshold_s
+        )
 
         print("Trying to substitute percussive onsets in place of absent beats")
         # add a 0 in there in case no beats have been found until the first, very deep into the song
@@ -144,7 +146,9 @@ class HeadbangBeatTracker:
 
                 sparse_onsets = numpy.split(
                     segment_onsets,
-                    numpy.where(numpy.diff(segment_onsets) > self.onset_near_threshold_s)[0]
+                    numpy.where(
+                        numpy.diff(segment_onsets) > self.onset_near_threshold_s
+                    )[0]
                     + 1,
                 )
 
@@ -163,4 +167,3 @@ class HeadbangBeatTracker:
         self.aligned = numpy.sort(numpy.concatenate((self.aligned, self.to_concat)))
 
         return self.aligned
-

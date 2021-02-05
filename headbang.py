@@ -129,27 +129,27 @@ def main():
     pool = multiprocessing.Pool(args.n_pool)
 
     hbt = HeadbangBeatTracker(
-            pool,
-            # consensus beat tracking params
-            args.algorithms,
-            args.beat_near_threshold,
-            args.consensus_ratio,
-            # perccussive onset alignment params
-            args.disable_onsets,
-            args.max_no_beats,
-            args.onset_near_threshold,
-            args.onset_silence_threshold,
-            # hpss params
-            args.harmonic_margin,
-            args.harmonic_frame,
-            args.percussive_margin,
-            args.percussive_frame,
-            # transient shaper params
-            args.fast_attack_ms,
-            args.slow_attack_ms,
-            args.release_ms,
-            args.power_memory_ms,
-            args.filter_order,
+        pool,
+        # consensus beat tracking params
+        args.algorithms,
+        args.beat_near_threshold,
+        args.consensus_ratio,
+        # perccussive onset alignment params
+        args.disable_onsets,
+        args.max_no_beats,
+        args.onset_near_threshold,
+        args.onset_silence_threshold,
+        # hpss params
+        args.harmonic_margin,
+        args.harmonic_frame,
+        args.percussive_margin,
+        args.percussive_frame,
+        # transient shaper params
+        args.fast_attack_ms,
+        args.slow_attack_ms,
+        args.release_ms,
+        args.power_memory_ms,
+        args.filter_order,
     )
 
     print("Applying HeadbangBeatTracker algorithm")
@@ -171,7 +171,14 @@ def main():
     if args.show_plots:
         print("Displaying plots")
         generate_all_plots(
-            x, hbt.cbt.all_beats, hbt.beat_consensus, hbt.onsets, hbt.xp, hbt.xp_hpss, hbt.aligned, hbt.to_concat
+            x,
+            hbt.cbt.all_beats,
+            hbt.beat_consensus,
+            hbt.onsets,
+            hbt.xp,
+            hbt.xp_hpss,
+            hbt.aligned,
+            hbt.to_concat,
         )
 
 
