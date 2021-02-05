@@ -1,12 +1,9 @@
-fmt: black test
-
-mypy:
-	mypy headbang.py
+fmt: black
 
 black:
-	black headbang.py test_headbang.py
+	black headbang.py headbang/*.py mir_beat_eval.py dbn_reference_beats.py
 
-test:
-	python test_headbang.py
+ghpages_dev:
+	cd docs/ && bundle exec jekyll serve
 
-.PHONY: fmt black mypy
+.PHONY: fmt black
