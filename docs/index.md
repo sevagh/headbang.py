@@ -1,6 +1,6 @@
 ## headbang.py
 
-headbang.py is a single-file meta-algorithm for accurate percussive beat tracking in fully mixed progressive metal songs. It considers the consensus of multiple diverse beat and onset detectors.
+headbang.py is a meta-algorithm for accurate percussive beat tracking in fully mixed progressive metal songs. It considers the consensus of multiple diverse beat and onset detectors.
 
 The goal is to only predict beats that align with strong percussive onsets. For example, during a segment of the song where the drums are silent, there may be a silent/implicit beat, but headbang.py will not emit any predictions.
 
