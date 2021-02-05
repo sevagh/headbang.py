@@ -2,5 +2,9 @@ __pycache__
 *.pyc
 *.egg-info
 /*.wav
+*.opus
+*.mp3
+*.mp4
+*.webm
 /*.png
 docs/_site

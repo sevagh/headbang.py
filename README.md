@@ -1,6 +1,6 @@
 # headbang.py
 
-headbang.py is a single-file beat-tracking meta-algorithm for accurate beat tracking in fully mixed progressive metal songs.
+headbang.py is a beat-tracking meta-algorithm for accurate beat tracking in fully mixed progressive metal songs.
 
 The input is a wav file containing the fully mixed song you want to track beats for. The inputs tested were mainly from modern prog metal/djent bands (e.g. Periphery, Tesseract, Volumes, Mestis, Vitalism, Anup Sastry, Intervals), acquired with youtube-dl. I found that the algorithm works rather well for many songs, even non-instrumental tracks with vocals.
 
@@ -12,7 +12,7 @@ The result is achieved by considering a consensus or ensemble of the outputs fro
 
 The algorithm is described in more detail, and with helpful visuals, on the project's github-pages site: https://sevagh.github.io/headbang.py
 
-**nb** For a strange reason, I get significantly worse outputs from my laptop compared to my desktop. I'll need to investigate more. If you feel that you're getting totally inaccurate results, let me know by opening an issue.
+**nb** For a strange reason, I get significantly worse outputs from my laptop compared to my desktop. I'll need to investigate more. I suspect one of the beat tracking algorithms runs itself in a "low accuracy low performance" mode. If you feel that you're getting totally inaccurate results, let me know by opening an issue.
 
 ## Installation and usage
 
