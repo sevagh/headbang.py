@@ -174,16 +174,18 @@ The median score for each of the six measure was taken across the 218 tracks of 
 Output result table:
 
 ```
-| algorithm   |   F-measure |   Cemgil |      Goto |   McKinney P-score |
-|-------------|-------------|----------|-----------|--------------------|
-| SB1         |    0.55288  | 0.436248 | 0.225806  |           0.649583 |
-| consensus   |    0.461467 | 0.36056  | 0.0368664 |           0.527321 |
+| algorithm   |   F-measure |     Cemgil |      Goto |   McKinney P-score |   Precision |     Recall |
+|-------------|-------------|------------|-----------|--------------------|-------------|------------|
+| SB1         |  0.55288    | 0.436283   | 0.225806  |         0.649583   |   0.537928  | 0.602492   |
+| consensus   |  0.46131    | 0.360548   | 0.0368664 |         0.527189   |   0.411873  | 0.576754   |
+| headbang    |  0.00277184 | 0.00205234 | 0         |         0.00429008 |   0.0124101 | 0.00184692 |
 ```
 
 ## Discussion
 
- and repeating the testbench:
+You can see that the HeadbangBeatTracker achieves atrocious performance - but that's mostly because the SMC dataset doesn't consist of modern Western metal songs with strong percussive components (for most of the tracks, the percussive onsets didn't exist).
 
+The above shows that headbang.py's algorithms have a different goal from a true beat tracker, and they are not drop-in replacements for a standard, well-known beat tracking algorithms.
 
 ### References
 
