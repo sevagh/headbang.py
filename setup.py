@@ -14,7 +14,7 @@ DESCRIPTION = 'Percussive beat tracking in fully mixed metal songs'
 URL = 'https://github.com/sevagh/headbang.py'
 EMAIL = 'sevagh@protonmail.com'
 AUTHOR = 'Sevag Hanssian'
-REQUIRES_PYTHON = '>=3.8.0'
+REQUIRES_PYTHON = '>=3.7.0'
 VERSION = None
 
 REQUIRED = []
