@@ -24,7 +24,7 @@ def precision_recall(reference_beats, estimated_beats, f_measure_threshold=0.07)
     mir_eval_beat.validate(reference_beats, estimated_beats)
     # When estimated beats are empty, no beats are correct; metric is 0
     if estimated_beats.size == 0 or reference_beats.size == 0:
-        return 0.
+        return (0., 0.)
     # Compute the best-case matching between reference and estimated locations
     matching = util.match_events(reference_beats,
                                  estimated_beats,

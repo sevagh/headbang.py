@@ -9,12 +9,12 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'headbang.py'
+NAME = 'headbang'
 DESCRIPTION = 'Percussive beat tracking in fully mixed metal songs'
 URL = 'https://github.com/sevagh/headbang.py'
-EMAIL = 'sevag.hanssian@gmail.com'
+EMAIL = 'sevagh@protonmail.com'
 AUTHOR = 'Sevag Hanssian'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.8.0'
 VERSION = None
 
 REQUIRED = []
@@ -60,7 +60,7 @@ setup(
     packages=find_packages(exclude=('tests',)),
     py_modules=['headbang'],
     install_requires=REQUIRED,
-    test_requires=REQUIRED+TEST_REQUIRED,
+    tests_require=REQUIRED+TEST_REQUIRED,
     include_package_data=True,
     license='MIT',
     classifiers=[
