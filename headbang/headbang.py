@@ -40,7 +40,6 @@ class HeadbangBeatTracker:
         # consensus beat tracking params
         algorithms="1,2,3,4,5,6",
         beat_near_threshold_s=0.1,
-        consensus_ratio=0.5,
         # onset alignment params
         disable_onsets=False,
         max_no_beats=2.0,
@@ -66,8 +65,6 @@ class HeadbangBeatTracker:
         self.cbt = ConsensusBeatTracker(
             self.pool,
             algorithms=algorithms,
-            beat_near_threshold_s=beat_near_threshold_s,
-            consensus_ratio=consensus_ratio,
         )
 
         self.cbt.print_params()
@@ -116,67 +113,59 @@ class HeadbangBeatTracker:
         self.onsets = self.onset_detector.detect_onsets(self.xp, self.pool)
 
         print("Aligning agreed beats with percussive onsets")
-        #self.aligned = align_beats_onsets(
-        #    self.beat_consensus, self.onsets, self.beat_near_threshold_s
-        #)
-        self.aligned, _ = self.ttap([self.beat_consensus, self.onsets])
+        self.aligned = align_beats_onsets(
+            self.beat_consensus, self.onsets, self.beat_near_threshold_s
+        )
 
-        #print("Trying to substitute percussive onsets in place of absent beats")
-        ## add a 0 in there in case no beats have been found until the first, very deep into the song
-        ## also concatenate the max length for that case too
-        #endofsong = (len(x) - 1) / 44100.0
+        print("Trying to substitute percussive onsets in place of absent beats")
+        # add a 0 in there in case no beats have been found until the first, very deep into the song
+        # also concatenate the max length for that case too
+        endofsong = (len(x) - 1) / 44100.0
 
-        #aligned_prime = numpy.concatenate(([0.0], self.aligned, [endofsong]))
+        aligned_prime = numpy.concatenate(([0.0], self.aligned, [endofsong]))
 
-        #beat_jumps = numpy.where(numpy.diff(aligned_prime) > self.max_no_beats)[0]
+        beat_jumps = numpy.where(numpy.diff(aligned_prime) > self.max_no_beats)[0]
 
-        #self.to_concat = numpy.array([])
+        self.to_concat = numpy.array([])
 
-        ## collect extra beats by applying consensus beat tracking specifically to low-information segments
-        #for j in beat_jumps:
-        #    try:
-        #        print(
-        #            "segment with no beats: {0}-{1}".format(
-        #                aligned_prime[j], aligned_prime[j + 1]
-        #            )
-        #        )
+        # collect extra beats by applying consensus beat tracking specifically to low-information segments
+        for j in beat_jumps:
+            try:
+                print(
+                    "segment with no beats: {0}-{1}".format(
+                        aligned_prime[j], aligned_prime[j + 1]
+                    )
+                )
 
-        #        segment_onsets = self.onsets[
-        #            numpy.where(
-        #                numpy.logical_and(
-        #                    self.onsets > aligned_prime[j] + 1.0,
-        #                    self.onsets < aligned_prime[j + 1] - 1.0,
-        #                )
-        #            )[0]
-        #        ]
+                segment_onsets = self.onsets[
+                    numpy.where(
+                        numpy.logical_and(
+                            self.onsets > aligned_prime[j] + 1.0,
+                            self.onsets < aligned_prime[j + 1] - 1.0,
+                        )
+                    )[0]
+                ]
 
-        #        #segment_onset_beats = madmom.features.beats.DBNBeatTrackingProcessor(fps=100)(segment_onsets)
-        #        #print(segment_onset_beats)
-        #        #_, segment_onset_beats = beat_track(onset_envelope=segment_onsets)
-        #        #beats = madmom.features.beats.BeatDetectionProcessor(fps=100)(act)
+                sparse_onsets = numpy.split(
+                    segment_onsets,
+                    numpy.where(
+                        numpy.diff(segment_onsets) > self.onset_near_threshold_s
+                    )[0]
+                    + 1,
+                )
 
-        #        #sparse_onsets = numpy.split(
-        #        #    segment_onsets,
-        #        #    numpy.where(
-        #        #        numpy.diff(segment_onsets) > self.onset_near_threshold_s
-        #        #    )[0]
-        #        #    + 1,
-        #        #)
+                so = [s[0] for s in sparse_onsets if s.size > 0]
 
-        #        #so = [s[0] for s in sparse_onsets if s.size > 0]
-        #        #so = segment_onsets
+                if so:
+                    print(
+                        "supplementing with percussive onsets from this region: {0}".format(
+                            so
+                        )
+                    )
+                    self.to_concat = numpy.concatenate((self.to_concat, so))
+            except IndexError:
+                break
 
-        #        #if so:
-        #        #    print(
-        #        #        "supplementing with percussive onsets from this region: {0}".format(
-        #        #            so
-        #        #        )
-        #        #    )
-        #        #self.to_concat = numpy.concatenate((self.to_concat, so))
-        #        self.to_concat = numpy.concatenate((self.to_concat, segment_onset_beats))
-        #    except IndexError:
-        #        break
-
-        #self.aligned = numpy.sort(numpy.concatenate((self.aligned, self.to_concat)))
+        self.aligned = numpy.sort(numpy.concatenate((self.aligned, self.to_concat)))
 
         return self.aligned

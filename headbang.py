@@ -45,13 +45,13 @@ def main():
     onset_args.add_argument(
         "--max-no-beats",
         type=float,
-        default=2.0,
+        default=1.0,
         help="Segments with missing beats to substitute onsets",
     )
     onset_args.add_argument(
         "--onset-near-threshold",
         type=float,
-        default=0.15,
+        default=0.35,
         help="How close onsets should be in seconds when supplementing onset information",
     )
     onset_args.add_argument(
@@ -139,7 +139,6 @@ def main():
         # consensus beat tracking params
         args.algorithms,
         args.beat_near_threshold,
-        args.consensus_ratio,
         # perccussive onset alignment params
         args.disable_onsets,
         args.max_no_beats,

@@ -85,20 +85,15 @@ class ConsensusBeatTracker:
         self,
         pool,
         algorithms="1,2,3,4,5,6",
-        beat_near_threshold_s=0.1,
-        consensus_ratio=0.5,
     ):
         self.pool = pool
         self.beat_tracking_algorithms = [int(x) for x in algorithms.split(",")]
-        self.beat_near_threshold_s = beat_near_threshold_s
 
-        self.total = len(self.beat_tracking_algorithms)
-        self.consensus_ratio = consensus_ratio
-        self.consensus = int(numpy.ceil(consensus_ratio * self.total))
+        self.ttap = TempoTapMaxAgreement()
 
     def print_params(self):
         print(
-            "Consensus beat tracker params:\n\talgos: {0}\n\tconsensus: {1:01d}/{2:01d}\n\tbeat near (s): {3:04f}".format(
+            "Consensus beat tracker algos: {0}".format(
                 ",\n\t\t".join(
                     [
                         algo_name
@@ -106,9 +101,6 @@ class ConsensusBeatTracker:
                         if i in self.beat_tracking_algorithms
                     ]
                 ),
-                int(self.consensus),
-                int(self.total),
-                self.beat_near_threshold_s,
             )
         )
 
@@ -120,36 +112,6 @@ class ConsensusBeatTracker:
         )
 
         beat_results = [b.astype(numpy.single) for b in beat_results]
-
-        print(type(beat_results))
-        #print(beat_results)
-        print(type(beat_results[0]))
-        #print(beat_results[0])
-        print(beat_results[0].dtype)
-        print(beat_results[0].shape)
-
-        # need a consensus across all algorithms
-        #all_beats = numpy.array([])
-
-        #for (beats, confidence) in beat_results:
-        #    if confidence >= 1.5:
-        #        all_beats = numpy.concatenate((all_beats, beats))
-        #    else:
-        #        # prune multifeature out of it
-        #        self.total -= 1
-        #        self.consensus = int(numpy.ceil(self.consensus_ratio * self.total))
-
-        #self.all_beats = numpy.sort(all_beats)
-
-        #beat_consensus = get_consensus_beats(
-        #    self.all_beats,
-        #    self.beat_near_threshold_s,
-        #    self.consensus,
-        #)
-
-        consensus = TempoTapMaxAgreement()
-
-        beat_consensus, _ = consensus(beat_results)
-        print(type(beat_consensus))
+        beat_consensus, _ = self.ttap(beat_results)
 
         return beat_consensus
