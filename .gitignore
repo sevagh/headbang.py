@@ -5,6 +5,7 @@ __pycache__
 *.opus
 *.mp3
 *.mp4
+*.m4a
 *.webm
 /*.png
 docs/_site

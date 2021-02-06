@@ -25,7 +25,7 @@ def main():
     beat_args.add_argument(
         "--algorithms",
         type=str,
-        default="1,2,3,4,5,6,7,8",
+        default="1,2,3,4,5,6",
         help="List of beat tracking algorithms to apply",
     )
     beat_args.add_argument(

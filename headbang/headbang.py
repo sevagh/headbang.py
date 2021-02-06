@@ -35,7 +35,7 @@ class HeadbangBeatTracker:
         self,
         pool,
         # consensus beat tracking params
-        algorithms="1,2,3,4,5,6,7,8",
+        algorithms="1,2,3,4,5,6",
         beat_near_threshold_s=0.1,
         consensus_ratio=0.5,
         # onset alignment params

@@ -15,8 +15,6 @@ from librosa.beat import beat_track
 algo_names = [
     "_",
     "madmom DBNBeatTrackingProcessor",
-    "madmom BeatTrackingProcessor",
-    "madmom CRFBeatDetectionProcessor",
     "madmom BeatDetectionProcessor",
     "essentia BeatTrackerMultiFeature",
     "essentia BeatTrackerDegara",
@@ -36,18 +34,14 @@ def apply_single_beat_tracker(x, beat_algo):
     if beat_algo == 1:
         beats = madmom.features.beats.DBNBeatTrackingProcessor(fps=100)(act)
     elif beat_algo == 2:
-        beats = madmom.features.beats.BeatTrackingProcessor(fps=100)(act)
-    elif beat_algo == 3:
-        beats = madmom.features.beats.CRFBeatDetectionProcessor(fps=100)(act)
-    elif beat_algo == 4:
         beats = madmom.features.beats.BeatDetectionProcessor(fps=100)(act)
-    elif beat_algo == 5:
+    elif beat_algo == 3:
         beats, confidence = BeatTrackerMultiFeature()(x)
-    elif beat_algo == 6:
+    elif beat_algo == 4:
         beats = BeatTrackerDegara()(x)
-    elif beat_algo == 7:
+    elif beat_algo == 5:
         _, beats = beat_track(x, sr=44100, units="time")
-    elif beat_algo == 8:
+    elif beat_algo == 6:
         beats = btrack.trackBeats(x)
 
     return beats, confidence
@@ -88,7 +82,7 @@ class ConsensusBeatTracker:
     def __init__(
         self,
         pool,
-        algorithms="1,2,3,4,5,6,7,8",
+        algorithms="1,2,3,4,5,6",
         beat_near_threshold_s=0.1,
         consensus_ratio=0.5,
     ):
@@ -132,7 +126,7 @@ class ConsensusBeatTracker:
             else:
                 # prune multifeature out of it
                 self.total -= 1
-                self.consensus = int(numpy.ceil(consensus_ratio * self.total))
+                self.consensus = int(numpy.ceil(self.consensus_ratio * self.total))
 
         self.all_beats = numpy.sort(all_beats)
 
