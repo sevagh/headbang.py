@@ -175,6 +175,13 @@ def main():
 
     print("Overlaying clicks at beat locations")
     clicks = librosa.clicks(beats, sr=44100, length=len(x))
+
+    # if stereo, write it that way for higher quality
+    x = load_wav(args.wav_in, stereo=True)
+
+    if x.shape[1] == 2:
+        clicks = numpy.column_stack((clicks, clicks))  # convert to stereo
+
     final_waveform = (x + clicks).astype(numpy.single)
 
     print("Writing output with clicks to {0}".format(args.wav_out))
