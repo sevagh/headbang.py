@@ -53,7 +53,7 @@ def main():
         "--onset-silence-threshold",
         type=float,
         default=DEFAULTS["onset_silence_threshold"],
-        help="Silence threshold"
+        help="Silence threshold",
     )
 
     parser.add_argument(
@@ -109,17 +109,31 @@ def main():
 
     tshaper_args = parser.add_argument_group("multiband transient shaper arguments")
     tshaper_args.add_argument(
-        "--fast-attack-ms", type=int, default=DEFAULTS["fast_attack_ms"], help="Fast attack (ms)"
+        "--fast-attack-ms",
+        type=int,
+        default=DEFAULTS["fast_attack_ms"],
+        help="Fast attack (ms)",
     )
     tshaper_args.add_argument(
-        "--slow-attack-ms", type=int, default=DEFAULTS["slow_attack_ms"], help="Slow attack (ms)"
+        "--slow-attack-ms",
+        type=int,
+        default=DEFAULTS["slow_attack_ms"],
+        help="Slow attack (ms)",
     )
-    tshaper_args.add_argument("--release-ms", type=int, default=DEFAULTS["release_ms"], help="Release (ms)")
     tshaper_args.add_argument(
-        "--power-memory-ms", type=int, default=DEFAULTS["power_memory_ms"], help="Power filter memory (ms)"
+        "--release-ms", type=int, default=DEFAULTS["release_ms"], help="Release (ms)"
     )
     tshaper_args.add_argument(
-        "--filter-order", type=int, default=DEFAULTS["filter_order"], help="Bandpass (butter) filter order"
+        "--power-memory-ms",
+        type=int,
+        default=DEFAULTS["power_memory_ms"],
+        help="Power filter memory (ms)",
+    )
+    tshaper_args.add_argument(
+        "--filter-order",
+        type=int,
+        default=DEFAULTS["filter_order"],
+        help="Bandpass (butter) filter order",
     )
 
     parser.add_argument("wav_in", help="input wav file")

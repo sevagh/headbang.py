@@ -28,9 +28,6 @@ algo_names = [
 def apply_single_beat_tracker(x, beat_algo):
     beats = None
 
-    # use a bogus confidence for everything except MultiFeature
-    confidence = 1.5
-
     act = madmom.features.beats.RNNBeatProcessor()(x)
 
     if beat_algo == 1:
@@ -46,12 +43,11 @@ def apply_single_beat_tracker(x, beat_algo):
     elif beat_algo == 6:
         beats = btrack.trackBeats(x)
 
-    #return beats, confidence
     return beats
 
 
 def get_consensus_beats(
-    all_beats, beat_near_threshold_s=0.1, consensus=0, beat_pick="mean"
+    all_beats, beat_near_threshold_s, consensus, beat_pick="mean"
 ):
     final_beats = []
     if len(all_beats) == 0:
