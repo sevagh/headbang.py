@@ -1,6 +1,7 @@
 from .percussive_transients import ihpss
 from .onset import OnsetDetector, ODF
 from .beattrack import ConsensusBeatTracker
+from .params import DEFAULTS
 import numpy
 import madmom
 from librosa.beat import beat_track
@@ -38,26 +39,26 @@ class HeadbangBeatTracker:
         self,
         pool,
         # consensus beat tracking params
-        algorithms="1,2,3,4,5,6",
-        beat_near_threshold_s=0.1,
+        algorithms=DEFAULTS["algorithms"],
+        onset_align_threshold_s=DEFAULTS["onset_align_threshold_s"],
         # onset alignment params
         disable_onsets=False,
-        max_no_beats=2.0,
-        onset_near_threshold_s=0.1,
-        onset_silence_threshold=0.035,
+        max_no_beats=DEFAULTS["max_no_beats"],
+        onset_near_threshold_s=DEFAULTS["onset_near_threshold_s"],
+        onset_silence_threshold=DEFAULTS["onset_silence_threshold"],
         # hpss params
-        harmonic_margin=2.0,
-        harmonic_frame=4096,
-        percussive_margin=2.0,
-        percussive_frame=256,
+        harmonic_margin=DEFAULTS["harmonic_margin"],
+        harmonic_frame=DEFAULTS["harmonic_frame"],
+        percussive_margin=DEFAULTS["percussive_margin"],
+        percussive_frame=DEFAULTS["percussive_frame"],
         # transient shaper params
-        fast_attack_ms=1,
-        slow_attack_ms=15,
-        release_ms=20,
-        power_memory_ms=1,
-        filter_order=2,
+        fast_attack_ms=DEFAULTS["fast_attack_ms"],
+        slow_attack_ms=DEFAULTS["slow_attack_ms"],
+        release_ms=DEFAULTS["release_ms"],
+        power_memory_ms=DEFAULTS["power_memory_ms"],
+        filter_order=DEFAULTS["filter_order"],
     ):
-        self.beat_near_threshold_s = beat_near_threshold_s
+        self.onset_align_threshold_s = onset_align_threshold_s
         self.max_no_beats = max_no_beats
         self.onset_near_threshold_s = onset_near_threshold_s
 
@@ -114,7 +115,7 @@ class HeadbangBeatTracker:
 
         print("Aligning agreed beats with percussive onsets")
         self.aligned = align_beats_onsets(
-            self.beat_consensus, self.onsets, self.beat_near_threshold_s
+            self.beat_consensus, self.onsets, self.onset_align_threshold_s
         )
 
         print("Trying to substitute percussive onsets in place of absent beats")

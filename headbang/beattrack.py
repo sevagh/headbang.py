@@ -11,6 +11,7 @@ from essentia.standard import (
 )
 import madmom
 from librosa.beat import beat_track
+from .params import DEFAULTS
 
 
 algo_names = [
@@ -50,7 +51,7 @@ def apply_single_beat_tracker(x, beat_algo):
 
 
 def get_consensus_beats(
-    all_beats, beat_near_threshold=0.1, consensus=0, beat_pick="mean"
+    all_beats, beat_near_threshold_s=0.1, consensus=0, beat_pick="mean"
 ):
     final_beats = []
     if len(all_beats) == 0:
@@ -59,7 +60,7 @@ def get_consensus_beats(
     good_beats = numpy.sort(numpy.unique(all_beats))
     grouped_beats = numpy.split(
         good_beats,
-        numpy.where(numpy.diff(good_beats) > beat_near_threshold)[0] + 1,
+        numpy.where(numpy.diff(good_beats) > beat_near_threshold_s)[0] + 1,
     )
 
     beats = None
@@ -84,7 +85,7 @@ class ConsensusBeatTracker:
     def __init__(
         self,
         pool,
-        algorithms="1,2,3,4,5,6",
+        algorithms=DEFAULTS["algorithms"],
     ):
         self.pool = pool
         self.beat_tracking_algorithms = [int(x) for x in algorithms.split(",")]

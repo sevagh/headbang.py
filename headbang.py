@@ -2,9 +2,9 @@
 
 import matplotlib.pyplot as plt
 import argparse
+import multiprocessing
 import sys
 import json
-import multiprocessing
 import numpy
 import librosa
 from madmom.io.audio import write_wave_file
@@ -12,6 +12,7 @@ from madmom.io.audio import write_wave_file
 from headbang import HeadbangBeatTracker
 from headbang.util import load_wav
 from headbang.percussive_transients import kick_snare_filter
+from headbang.params import DEFAULTS
 
 
 def main():
@@ -25,37 +26,34 @@ def main():
     beat_args.add_argument(
         "--algorithms",
         type=str,
-        default="1,2,3,4,5,6",
+        default=DEFAULTS["algorithms"],
         help="List of beat tracking algorithms to apply",
     )
     beat_args.add_argument(
-        "--beat-near-threshold",
+        "--onset-align-threshold-s",
         type=float,
-        default=0.1,
-        help="How close beats should be in seconds to be considered the same beat",
-    )
-    beat_args.add_argument(
-        "--consensus-ratio",
-        type=float,
-        default=0.75,
-        help="How many (out of the maximum possible) beat locations should agree",
+        default=DEFAULTS["onset_align_threshold_s"],
+        help="How close beats should align with onsets (in seconds)",
     )
 
     onset_args = parser.add_argument_group("onsets arguments")
     onset_args.add_argument(
         "--max-no-beats",
         type=float,
-        default=1.0,
+        default=DEFAULTS["max_no_beats"],
         help="Segments with missing beats to substitute onsets",
     )
     onset_args.add_argument(
-        "--onset-near-threshold",
+        "--onset-near-threshold-s",
         type=float,
-        default=0.35,
-        help="How close onsets should be in seconds when supplementing onset information",
+        default=DEFAULTS["onset_near_threshold_s"],
+        help="How close onsets should be (in seconds) when supplementing onset information",
     )
     onset_args.add_argument(
-        "--onset-silence-threshold", type=float, default=0.035, help="Silence threshold"
+        "--onset-silence-threshold",
+        type=float,
+        default=DEFAULTS["onset_silence_threshold"],
+        help="Silence threshold"
     )
 
     parser.add_argument(
@@ -87,41 +85,41 @@ def main():
     hpss_args.add_argument(
         "--harmonic-margin",
         type=float,
-        default=2.3,
+        default=DEFAULTS["harmonic_margin"],
         help="Separation margin for HPSS harmonic iteration",
     )
     hpss_args.add_argument(
         "--harmonic-frame",
         type=int,
-        default=16384,
+        default=DEFAULTS["harmonic_frame"],
         help="T-F/frame size for HPSS harmonic iteration",
     )
     hpss_args.add_argument(
         "--percussive-margin",
         type=float,
-        default=2.3,
+        default=DEFAULTS["percussive_margin"],
         help="Separation margin for HPSS percussive iteration",
     )
     hpss_args.add_argument(
         "--percussive-frame",
         type=int,
-        default=128,
+        default=DEFAULTS["percussive_frame"],
         help="T-F/frame size for HPSS percussive iteration",
     )
 
     tshaper_args = parser.add_argument_group("multiband transient shaper arguments")
     tshaper_args.add_argument(
-        "--fast-attack-ms", type=int, default=1, help="Fast attack (ms)"
+        "--fast-attack-ms", type=int, default=DEFAULTS["fast_attack_ms"], help="Fast attack (ms)"
     )
     tshaper_args.add_argument(
-        "--slow-attack-ms", type=int, default=15, help="Slow attack (ms)"
+        "--slow-attack-ms", type=int, default=DEFAULTS["slow_attack_ms"], help="Slow attack (ms)"
     )
-    tshaper_args.add_argument("--release-ms", type=int, default=20, help="Release (ms)")
+    tshaper_args.add_argument("--release-ms", type=int, default=DEFAULTS["release_ms"], help="Release (ms)")
     tshaper_args.add_argument(
-        "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
+        "--power-memory-ms", type=int, default=DEFAULTS["power_memory_ms"], help="Power filter memory (ms)"
     )
     tshaper_args.add_argument(
-        "--filter-order", type=int, default=3, help="Bandpass (butter) filter order"
+        "--filter-order", type=int, default=DEFAULTS["filter_order"], help="Bandpass (butter) filter order"
     )
 
     parser.add_argument("wav_in", help="input wav file")
@@ -138,11 +136,11 @@ def main():
         pool,
         # consensus beat tracking params
         args.algorithms,
-        args.beat_near_threshold,
+        args.onset_align_threshold_s,
         # perccussive onset alignment params
         args.disable_onsets,
         args.max_no_beats,
-        args.onset_near_threshold,
+        args.onset_near_threshold_s,
         args.onset_silence_threshold,
         # hpss params
         args.harmonic_margin,
