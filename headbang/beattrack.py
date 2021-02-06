@@ -77,7 +77,7 @@ class ConsensusBeatTracker:
             zip(itertools.repeat(x), self.beat_tracking_algorithms),
         )
 
-        beat_results = [b.astype(numpy.single) for b in beat_results]
-        beat_consensus, _ = self.ttap(beat_results)
+        self.beat_results = [b.astype(numpy.single) for b in beat_results]
+        beat_consensus, _ = self.ttap(self.beat_results)
 
         return beat_consensus

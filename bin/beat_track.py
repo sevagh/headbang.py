@@ -177,12 +177,12 @@ def main():
     clicks = librosa.clicks(beats, sr=44100, length=len(x))
 
     # if stereo, write it that way for higher quality
-    x = load_wav(args.wav_in, stereo=True)
+    x_stereo = load_wav(args.wav_in, stereo=True)
 
-    if x.shape[1] == 2:
+    if x_stereo.shape[1] == 2:
         clicks = numpy.column_stack((clicks, clicks))  # convert to stereo
 
-    final_waveform = (x + clicks).astype(numpy.single)
+    final_waveform = (x_stereo + clicks).astype(numpy.single)
 
     print("Writing output with clicks to {0}".format(args.wav_out))
     write_wave_file(final_waveform, args.wav_out, sample_rate=44100)
@@ -191,7 +191,7 @@ def main():
         print("Displaying plots")
         generate_all_plots(
             x,
-            hbt.cbt.all_beats,
+            hbt.cbt.beat_results,
             hbt.beat_consensus,
             hbt.onsets,
             hbt.xp,
@@ -218,14 +218,16 @@ def generate_all_plots(
     plt.plot(timestamps, x)
     plt.xlabel("time (seconds)")
     plt.ylabel("amplitude")
-    for beats in beat_results:
+    for i, beats in enumerate(beat_results):
+        # offset each different algo
         plt.plot(
             beats,
-            numpy.zeros(len(beats)),
+            numpy.zeros(len(beats), dtype=numpy.float) + i * 0.12,
             marker="o",
             linestyle="None",
             markersize=10,
         )
+    plt.ylim([-1, 1])
     plt.show()
 
     plt.figure(1)
