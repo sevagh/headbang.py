@@ -7,6 +7,7 @@ import itertools
 from essentia.standard import (
     BeatTrackerMultiFeature,
     BeatTrackerDegara,
+    TempoTapMaxAgreement,
 )
 import madmom
 from librosa.beat import beat_track
@@ -44,7 +45,8 @@ def apply_single_beat_tracker(x, beat_algo):
     elif beat_algo == 6:
         beats = btrack.trackBeats(x)
 
-    return beats, confidence
+    #return beats, confidence
+    return beats
 
 
 def get_consensus_beats(
@@ -117,23 +119,37 @@ class ConsensusBeatTracker:
             zip(itertools.repeat(x), self.beat_tracking_algorithms),
         )
 
+        beat_results = [b.astype(numpy.single) for b in beat_results]
+
+        print(type(beat_results))
+        #print(beat_results)
+        print(type(beat_results[0]))
+        #print(beat_results[0])
+        print(beat_results[0].dtype)
+        print(beat_results[0].shape)
+
         # need a consensus across all algorithms
-        all_beats = numpy.array([])
+        #all_beats = numpy.array([])
 
-        for (beats, confidence) in beat_results:
-            if confidence >= 1.5:
-                all_beats = numpy.concatenate((all_beats, beats))
-            else:
-                # prune multifeature out of it
-                self.total -= 1
-                self.consensus = int(numpy.ceil(self.consensus_ratio * self.total))
+        #for (beats, confidence) in beat_results:
+        #    if confidence >= 1.5:
+        #        all_beats = numpy.concatenate((all_beats, beats))
+        #    else:
+        #        # prune multifeature out of it
+        #        self.total -= 1
+        #        self.consensus = int(numpy.ceil(self.consensus_ratio * self.total))
 
-        self.all_beats = numpy.sort(all_beats)
+        #self.all_beats = numpy.sort(all_beats)
 
-        beat_consensus = get_consensus_beats(
-            self.all_beats,
-            self.beat_near_threshold_s,
-            self.consensus,
-        )
+        #beat_consensus = get_consensus_beats(
+        #    self.all_beats,
+        #    self.beat_near_threshold_s,
+        #    self.consensus,
+        #)
 
-        return numpy.sort(beat_consensus)
+        consensus = TempoTapMaxAgreement()
+
+        beat_consensus, _ = consensus(beat_results)
+        print(type(beat_consensus))
+
+        return beat_consensus
