@@ -1,2 +1,4 @@
 mir_eval==0.6
 tabulate==0.8.7
+pyaudio
+scipy

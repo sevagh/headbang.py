@@ -34,9 +34,22 @@ _FREQ_BANDS = [
 ]
 
 
-def _bandpass(lo, hi, x, fs, order):
+def kick_snare_filter(x, fs):
+    x_kick = lowpass(150, x, fs)
+    x_snare = bandpass(200, 500, x, fs)
+
+    return x_kick + x_snare
+
+
+def bandpass(lo, hi, x, fs, order=2):
     nyq = 0.5 * fs
     b, a = butter(order, [lo / nyq, hi / nyq], btype="band")
+    return lfilter(b, a, x)
+
+
+def lowpass(hi, x, fs, order=2):
+    nyq = 0.5 * fs
+    b, a = butter(order, hi / nyq, btype="low")
     return lfilter(b, a, x)
 
 
@@ -105,7 +118,7 @@ def _single_band_transient_shaper(
     lo = _FREQ_BANDS[band]
     hi = _FREQ_BANDS[band + 1]
 
-    y = _bandpass(lo, hi, x, fs, filter_order)
+    y = bandpass(lo, hi, x, fs, filter_order)
 
     # per bark band, apply a differential envelope attack/transient enhancer
     y_shaped = _attack_envelope(

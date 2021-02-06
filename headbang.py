@@ -11,6 +11,7 @@ from madmom.io.audio import write_wave_file
 
 from headbang import HeadbangBeatTracker
 from headbang.util import load_wav
+from headbang.percussive_transients import kick_snare_filter
 
 
 def main():
@@ -72,6 +73,11 @@ def main():
         "--disable-onsets",
         action="store_true",
         help="disable onset alignment, only output consensus beats",
+    )
+    parser.add_argument(
+        "--pre-kick-snare-filter",
+        action="store_true",
+        help="filter into kick (0-150) and snare (200-500) frequency bands first",
     )
     parser.add_argument(
         "--beats-out", type=str, default="", help="output beats txt file"
@@ -152,8 +158,12 @@ def main():
         args.filter_order,
     )
 
+    beats = None
     print("Applying HeadbangBeatTracker algorithm")
-    beats = hbt.beats(x)
+    if args.pre_kick_snare_filter:
+        beats = hbt.beats(kick_snare_filter(x, 44100))
+    else:
+        beats = hbt.beats(x)
 
     if args.beats_out:
         print("Writing beat locations to file {0}".format(args.beats_out))

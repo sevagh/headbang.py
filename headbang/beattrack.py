@@ -12,7 +12,7 @@ import madmom
 from librosa.beat import beat_track
 
 
-_algo_names = [
+algo_names = [
     "_",
     "madmom DBNBeatTrackingProcessor",
     "madmom BeatTrackingProcessor",
@@ -25,8 +25,12 @@ _algo_names = [
 ]
 
 
-def _apply_single_beat_tracker(x, beat_algo):
+def apply_single_beat_tracker(x, beat_algo):
     beats = None
+
+    # use a bogus confidence for everything except MultiFeature
+    confidence = 1.5
+
     act = madmom.features.beats.RNNBeatProcessor()(x)
 
     if beat_algo == 1:
@@ -38,7 +42,7 @@ def _apply_single_beat_tracker(x, beat_algo):
     elif beat_algo == 4:
         beats = madmom.features.beats.BeatDetectionProcessor(fps=100)(act)
     elif beat_algo == 5:
-        beats, _ = BeatTrackerMultiFeature()(x)
+        beats, confidence = BeatTrackerMultiFeature()(x)
     elif beat_algo == 6:
         beats = BeatTrackerDegara()(x)
     elif beat_algo == 7:
@@ -46,7 +50,7 @@ def _apply_single_beat_tracker(x, beat_algo):
     elif beat_algo == 8:
         beats = btrack.trackBeats(x)
 
-    return beats
+    return beats, confidence
 
 
 def get_consensus_beats(
@@ -93,6 +97,7 @@ class ConsensusBeatTracker:
         self.beat_near_threshold_s = beat_near_threshold_s
 
         self.total = len(self.beat_tracking_algorithms)
+        self.consensus_ratio = consensus_ratio
         self.consensus = int(numpy.ceil(consensus_ratio * self.total))
 
     def print_params(self):
@@ -101,7 +106,7 @@ class ConsensusBeatTracker:
                 ",\n\t\t".join(
                     [
                         algo_name
-                        for i, algo_name in enumerate(_algo_names)
+                        for i, algo_name in enumerate(algo_names)
                         if i in self.beat_tracking_algorithms
                     ]
                 ),
@@ -114,15 +119,20 @@ class ConsensusBeatTracker:
     def beats(self, x):
         # gather all the beats from all beat tracking algorithms
         beat_results = self.pool.starmap(
-            _apply_single_beat_tracker,
+            apply_single_beat_tracker,
             zip(itertools.repeat(x), self.beat_tracking_algorithms),
         )
 
         # need a consensus across all algorithms
         all_beats = numpy.array([])
 
-        for beats in beat_results:
-            all_beats = numpy.concatenate((all_beats, beats))
+        for (beats, confidence) in beat_results:
+            if confidence >= 1.5:
+                all_beats = numpy.concatenate((all_beats, beats))
+            else:
+                # prune multifeature out of it
+                self.total -= 1
+                self.consensus = int(numpy.ceil(consensus_ratio * self.total))
 
         self.all_beats = numpy.sort(all_beats)
 
