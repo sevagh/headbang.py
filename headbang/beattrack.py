@@ -35,7 +35,7 @@ def apply_single_beat_tracker(x, beat_algo):
     elif beat_algo == 2:
         beats = madmom.features.beats.BeatDetectionProcessor(fps=100)(act)
     elif beat_algo == 3:
-        beats, confidence = BeatTrackerMultiFeature()(x)
+        beats, _ = BeatTrackerMultiFeature()(x)
     elif beat_algo == 4:
         beats = BeatTrackerDegara()(x)
     elif beat_algo == 5:
@@ -44,37 +44,6 @@ def apply_single_beat_tracker(x, beat_algo):
         beats = btrack.trackBeats(x)
 
     return beats
-
-
-def get_consensus_beats(
-    all_beats, beat_near_threshold_s, consensus, beat_pick="mean"
-):
-    final_beats = []
-    if len(all_beats) == 0:
-        return final_beats
-
-    good_beats = numpy.sort(numpy.unique(all_beats))
-    grouped_beats = numpy.split(
-        good_beats,
-        numpy.where(numpy.diff(good_beats) > beat_near_threshold_s)[0] + 1,
-    )
-
-    beats = None
-    if beat_pick == "mean":
-        beats = [numpy.mean(x) for x in grouped_beats]
-    elif beat_pick == "first":
-        beats = [x[0] for x in grouped_beats]
-    else:
-        raise ValueError("unrecognized beat_pick strategy {0}".format(beat_pick))
-
-    tick_agreements = [len(x) for x in grouped_beats]
-
-    for i, tick in enumerate(beats):
-        # at least CONSENSUS beat trackers agree
-        if tick_agreements[i] >= consensus:
-            final_beats.append(tick)
-
-    return final_beats
 
 
 class ConsensusBeatTracker:
