@@ -27,6 +27,10 @@ def main():
         action="store_true",
         help="apply kick/snare filtering (0-100, 200-500) before",
     )
+
+    parser.add_argument(
+        "--filter-order", type=int, default=2, help="butter filter order"
+    )
     parser.add_argument("wav_in", help="input wav file")
     parser.add_argument("beat_wav_out", help="output beat wav file")
 
@@ -39,7 +43,7 @@ def main():
     if args.pre_kick_snare_filter:
         print("Filtering into kick/snare frequency range first")
         beat_times, _ = apply_single_beat_tracker(
-            kick_snare_filter(x, 44100), args.algorithm
+            kick_snare_filter(x, 44100, args.filter_order), args.algorithm
         )
     else:
         beat_times, _ = apply_single_beat_tracker(x, args.algorithm)

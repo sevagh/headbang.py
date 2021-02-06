@@ -34,9 +34,9 @@ _FREQ_BANDS = [
 ]
 
 
-def kick_snare_filter(x, fs):
-    x_kick = lowpass(150, x, fs)
-    x_snare = bandpass(200, 500, x, fs)
+def kick_snare_filter(x, fs, order=2):
+    x_kick = lowpass(150, x, fs, order=order)
+    x_snare = bandpass(200, 500, x, fs, order=order)
 
     return x_kick + x_snare
 

@@ -37,7 +37,7 @@ def main():
     beat_args.add_argument(
         "--consensus-ratio",
         type=float,
-        default=0.5,
+        default=0.75,
         help="How many (out of the maximum possible) beat locations should agree",
     )
 
@@ -51,7 +51,7 @@ def main():
     onset_args.add_argument(
         "--onset-near-threshold",
         type=float,
-        default=0.1,
+        default=0.15,
         help="How close onsets should be in seconds when supplementing onset information",
     )
     onset_args.add_argument(
@@ -87,25 +87,25 @@ def main():
     hpss_args.add_argument(
         "--harmonic-margin",
         type=float,
-        default=2.0,
+        default=2.3,
         help="Separation margin for HPSS harmonic iteration",
     )
     hpss_args.add_argument(
         "--harmonic-frame",
         type=int,
-        default=4096,
+        default=16384,
         help="T-F/frame size for HPSS harmonic iteration",
     )
     hpss_args.add_argument(
         "--percussive-margin",
         type=float,
-        default=2.0,
+        default=2.3,
         help="Separation margin for HPSS percussive iteration",
     )
     hpss_args.add_argument(
         "--percussive-frame",
         type=int,
-        default=256,
+        default=128,
         help="T-F/frame size for HPSS percussive iteration",
     )
 
@@ -121,7 +121,7 @@ def main():
         "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
     )
     tshaper_args.add_argument(
-        "--filter-order", type=int, default=2, help="Bandpass (butter) filter order"
+        "--filter-order", type=int, default=3, help="Bandpass (butter) filter order"
     )
 
     parser.add_argument("wav_in", help="input wav file")
@@ -161,7 +161,7 @@ def main():
     beats = None
     print("Applying HeadbangBeatTracker algorithm")
     if args.pre_kick_snare_filter:
-        beats = hbt.beats(kick_snare_filter(x, 44100))
+        beats = hbt.beats(kick_snare_filter(x, 44100, order=args.filter_order))
     else:
         beats = hbt.beats(x)
 
