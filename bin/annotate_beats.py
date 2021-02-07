@@ -106,15 +106,18 @@ def main():
 
     beats = numpy.asarray(beats)
 
-    # subtract average human auditory reaction time?
-    beats -= 0.15
+    # subtract my reaction delay
+    beats -= 0.3
 
     player.terminate_processing()
 
-    x = load_wav(args.wav_in)
+    x = load_wav(args.wav_in, stereo=True)
 
     print("annotated beat locations: {0}".format(beats))
     beat_clicks = librosa.clicks(beats, sr=44100, length=len(x))
+
+    if x.shape[0] == 1:
+        beat_clicks = numpy.column_stack((beat_clicks, beat_clicks))
 
     beat_waveform = (x + beat_clicks).astype(numpy.single)
 

@@ -4,6 +4,7 @@ from scipy.signal import butter, lfilter
 from librosa.decompose import hpss
 from librosa.core import stft, istft
 from librosa.util import fix_length
+from .params import DEFAULTS
 
 # bark frequency bands between 20 and 20khz, human hearing stuff
 _FREQ_BANDS = [
@@ -32,13 +33,6 @@ _FREQ_BANDS = [
     14105,
     20000,
 ]
-
-
-def kick_snare_filter(x, fs):
-    x_kick = lowpass(150, x, fs)
-    x_snare = bandpass(200, 500, x, fs)
-
-    return x_kick + x_snare
 
 
 def bandpass(lo, hi, x, fs, order=2):
@@ -166,15 +160,15 @@ def _multiband_transient_shaper(
 def ihpss(
     x,
     pool,
-    harmonic_margin=2.0,
-    harmonic_frame=4096,
-    percussive_margin=2.0,
-    percussive_frame=256,
-    fast_attack_ms=1,
-    slow_attack_ms=15,
-    release_ms=20,
-    power_memory_ms=1,
-    filter_order=2,
+    harmonic_margin=DEFAULTS["harmonic_margin"],
+    harmonic_frame=DEFAULTS["harmonic_frame"],
+    percussive_margin=DEFAULTS["percussive_margin"],
+    percussive_frame=DEFAULTS["percussive_frame"],
+    fast_attack_ms=DEFAULTS["fast_attack_ms"],
+    slow_attack_ms=DEFAULTS["slow_attack_ms"],
+    release_ms=DEFAULTS["release_ms"],
+    power_memory_ms=DEFAULTS["power_memory_ms"],
+    filter_order=DEFAULTS["filter_order"],
 ):
     print(
         "Iteration 1 of hpss: frame = {0}, margin = {1}".format(

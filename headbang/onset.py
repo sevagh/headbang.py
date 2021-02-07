@@ -17,7 +17,7 @@ these have to be global because they're not pickleable otherwise
 and can't be parallelized
 """
 
-ODF = ["hfc", "flux", "rms"]
+ODF = ["hfc", "rms"]
 _ONSET_DETECTORS = [OnsetDetection(method=f) for f in ODF]
 
 _w = Windowing(type="hann")
@@ -39,7 +39,7 @@ class OnsetDetector:
         self.onsets = Onsets(silenceThreshold=silence_threshold)
 
         weights = numpy.ones(len(ODF))
-        weights[0] = 3.0  # weight hfc stronger
+        weights[0] = 4.0  # weight hfc stronger
 
         self.weights = weights.astype(numpy.single)
 

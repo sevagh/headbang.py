@@ -2,12 +2,13 @@ from madmom.io.audio import load_audio_file
 import numpy
 
 
-def load_wav(wav_in):
+def load_wav(wav_in, stereo=False):
     x, fs = load_audio_file(wav_in, sample_rate=44100)
 
-    # stereo to mono if necessary
-    if len(x.shape) > 1 and x.shape[1] == 2:
-        x = x.sum(axis=1) / 2
+    if not stereo:
+        # stereo to mono if necessary
+        if len(x.shape) > 1 and x.shape[1] == 2:
+            x = x.sum(axis=1) / 2
 
     # cast to float
     x = x.astype(numpy.single)

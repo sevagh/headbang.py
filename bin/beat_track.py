@@ -2,16 +2,16 @@
 
 import matplotlib.pyplot as plt
 import argparse
+import multiprocessing
 import sys
 import json
-import multiprocessing
 import numpy
 import librosa
 from madmom.io.audio import write_wave_file
 
 from headbang import HeadbangBeatTracker
 from headbang.util import load_wav
-from headbang.percussive_transients import kick_snare_filter
+from headbang.params import DEFAULTS
 
 
 def main():
@@ -25,37 +25,34 @@ def main():
     beat_args.add_argument(
         "--algorithms",
         type=str,
-        default="1,2,3,4,5,6,7,8",
+        default=DEFAULTS["algorithms"],
         help="List of beat tracking algorithms to apply",
     )
     beat_args.add_argument(
-        "--beat-near-threshold",
+        "--onset-align-threshold-s",
         type=float,
-        default=0.1,
-        help="How close beats should be in seconds to be considered the same beat",
-    )
-    beat_args.add_argument(
-        "--consensus-ratio",
-        type=float,
-        default=0.5,
-        help="How many (out of the maximum possible) beat locations should agree",
+        default=DEFAULTS["onset_align_threshold_s"],
+        help="How close beats should align with onsets (in seconds)",
     )
 
     onset_args = parser.add_argument_group("onsets arguments")
     onset_args.add_argument(
         "--max-no-beats",
         type=float,
-        default=2.0,
+        default=DEFAULTS["max_no_beats"],
         help="Segments with missing beats to substitute onsets",
     )
     onset_args.add_argument(
-        "--onset-near-threshold",
+        "--onset-near-threshold-s",
         type=float,
-        default=0.1,
-        help="How close onsets should be in seconds when supplementing onset information",
+        default=DEFAULTS["onset_near_threshold_s"],
+        help="How close onsets should be (in seconds) when supplementing onset information",
     )
     onset_args.add_argument(
-        "--onset-silence-threshold", type=float, default=0.035, help="Silence threshold"
+        "--onset-silence-threshold",
+        type=float,
+        default=DEFAULTS["onset_silence_threshold"],
+        help="Silence threshold",
     )
 
     parser.add_argument(
@@ -75,11 +72,6 @@ def main():
         help="disable onset alignment, only output consensus beats",
     )
     parser.add_argument(
-        "--pre-kick-snare-filter",
-        action="store_true",
-        help="filter into kick (0-150) and snare (200-500) frequency bands first",
-    )
-    parser.add_argument(
         "--beats-out", type=str, default="", help="output beats txt file"
     )
 
@@ -87,41 +79,55 @@ def main():
     hpss_args.add_argument(
         "--harmonic-margin",
         type=float,
-        default=2.0,
+        default=DEFAULTS["harmonic_margin"],
         help="Separation margin for HPSS harmonic iteration",
     )
     hpss_args.add_argument(
         "--harmonic-frame",
         type=int,
-        default=4096,
+        default=DEFAULTS["harmonic_frame"],
         help="T-F/frame size for HPSS harmonic iteration",
     )
     hpss_args.add_argument(
         "--percussive-margin",
         type=float,
-        default=2.0,
+        default=DEFAULTS["percussive_margin"],
         help="Separation margin for HPSS percussive iteration",
     )
     hpss_args.add_argument(
         "--percussive-frame",
         type=int,
-        default=256,
+        default=DEFAULTS["percussive_frame"],
         help="T-F/frame size for HPSS percussive iteration",
     )
 
     tshaper_args = parser.add_argument_group("multiband transient shaper arguments")
     tshaper_args.add_argument(
-        "--fast-attack-ms", type=int, default=1, help="Fast attack (ms)"
+        "--fast-attack-ms",
+        type=int,
+        default=DEFAULTS["fast_attack_ms"],
+        help="Fast attack (ms)",
     )
     tshaper_args.add_argument(
-        "--slow-attack-ms", type=int, default=15, help="Slow attack (ms)"
+        "--slow-attack-ms",
+        type=int,
+        default=DEFAULTS["slow_attack_ms"],
+        help="Slow attack (ms)",
     )
-    tshaper_args.add_argument("--release-ms", type=int, default=20, help="Release (ms)")
     tshaper_args.add_argument(
-        "--power-memory-ms", type=int, default=1, help="Power filter memory (ms)"
+        "--release-ms", type=int, default=DEFAULTS["release_ms"], help="Release (ms)"
     )
     tshaper_args.add_argument(
-        "--filter-order", type=int, default=2, help="Bandpass (butter) filter order"
+        "--power-memory-ms",
+        type=int,
+        default=DEFAULTS["power_memory_ms"],
+        help="Power filter memory (ms)",
+    )
+    tshaper_args.add_argument(
+        "--filter-order",
+        type=int,
+        default=DEFAULTS["filter_order"],
+        help="Bandpass (butter) filter order",
     )
 
     parser.add_argument("wav_in", help="input wav file")
@@ -138,12 +144,11 @@ def main():
         pool,
         # consensus beat tracking params
         args.algorithms,
-        args.beat_near_threshold,
-        args.consensus_ratio,
+        args.onset_align_threshold_s,
         # perccussive onset alignment params
         args.disable_onsets,
         args.max_no_beats,
-        args.onset_near_threshold,
+        args.onset_near_threshold_s,
         args.onset_silence_threshold,
         # hpss params
         args.harmonic_margin,
@@ -160,10 +165,7 @@ def main():
 
     beats = None
     print("Applying HeadbangBeatTracker algorithm")
-    if args.pre_kick_snare_filter:
-        beats = hbt.beats(kick_snare_filter(x, 44100))
-    else:
-        beats = hbt.beats(x)
+    beats = hbt.beats(x)
 
     if args.beats_out:
         print("Writing beat locations to file {0}".format(args.beats_out))
@@ -173,7 +175,14 @@ def main():
 
     print("Overlaying clicks at beat locations")
     clicks = librosa.clicks(beats, sr=44100, length=len(x))
-    final_waveform = (x + clicks).astype(numpy.single)
+
+    # if stereo, write it that way for higher quality
+    x_stereo = load_wav(args.wav_in, stereo=True)
+
+    if x_stereo.shape[1] == 2:
+        clicks = numpy.column_stack((clicks, clicks))  # convert to stereo
+
+    final_waveform = (x_stereo + clicks).astype(numpy.single)
 
     print("Writing output with clicks to {0}".format(args.wav_out))
     write_wave_file(final_waveform, args.wav_out, sample_rate=44100)
@@ -182,7 +191,7 @@ def main():
         print("Displaying plots")
         generate_all_plots(
             x,
-            hbt.cbt.all_beats,
+            hbt.cbt.beat_results,
             hbt.beat_consensus,
             hbt.onsets,
             hbt.xp,
@@ -209,14 +218,16 @@ def generate_all_plots(
     plt.plot(timestamps, x)
     plt.xlabel("time (seconds)")
     plt.ylabel("amplitude")
-    for beats in beat_results:
+    for i, beats in enumerate(beat_results):
+        # offset each different algo
         plt.plot(
             beats,
-            numpy.zeros(len(beats)),
+            numpy.zeros(len(beats), dtype=numpy.float) + i * 0.12,
             marker="o",
             linestyle="None",
             markersize=10,
         )
+    plt.ylim([-1, 1])
     plt.show()
 
     plt.figure(1)
