@@ -1,7 +1,7 @@
 fmt: black
 
 black:
-	black headbang/*.py bin/*.py
+	black headbang/*.py bin/*.py headbang-hud/*.py
 
 ghpages_dev:
 	cd docs/ && bundle exec jekyll serve
