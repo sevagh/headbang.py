@@ -1,6 +1,6 @@
 DEFAULTS = {
     "algorithms": "1,2,3,4,5,6",
-    "onset_align_threshold_s": 0.1,
+    "onset_align_threshold_s": 0.07,
     "max_no_beats": 1.0,
     "onset_near_threshold_s": 0.35,
     "onset_silence_threshold": 0.035,
