@@ -53,6 +53,7 @@ class ConsensusBeatTracker:
         algorithms=DEFAULTS["algorithms"],
     ):
         self.pool = pool
+        self.algorithms = algorithms
         self.beat_tracking_algorithms = [int(x) for x in algorithms.split(",")]
 
         self.ttap = TempoTapMaxAgreement()
@@ -78,6 +79,11 @@ class ConsensusBeatTracker:
         )
 
         self.beat_results = [b.astype(numpy.single) for b in beat_results]
-        beat_consensus, _ = self.ttap(self.beat_results)
+
+        beat_consensus = None
+        if len(self.beat_results) > 1:
+            beat_consensus, _ = self.ttap(self.beat_results)
+        else:
+            beat_consensus = self.beat_results[0]
 
         return beat_consensus
