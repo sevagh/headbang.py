@@ -13,7 +13,6 @@ import os
 import multiprocessing
 from moviepy.editor import *
 from moviepy.audio.AudioClip import AudioArrayClip
-from essentia.standard import TempoTapMaxAgreement
 import scipy
 from scipy.signal import find_peaks_cwt
 from tempfile import gettempdir
@@ -151,17 +150,19 @@ def main():
 
     pose_tracker = OpenposeDetector()
 
-    bop_pos = (150, int(video_height - 50))
-    bop_bpm_pos = (330, int(video_height - 50))
+    bop_pos = (100, int(video_height - 50))
+    bop_bpm_pos = (280, int(video_height - 50))
     bop_color = (255, 255, 0)
 
-    strong_beat_pos = (750, int(video_height - 50))
-    strong_beat_bpm_pos = (975, int(video_height - 50))
-    strong_beat_color = (0, 165, 255)
-
-    all_beat_pos = (1350, int(video_height - 50))
-    all_beat_bpm_pos = (1540, int(video_height - 50))
+    all_beat_pos = (635, int(video_height - 50))
+    all_beat_bpm_pos = (860, int(video_height - 50))
     all_beat_color = (255, 0, 0)
+
+    groove_pos = (1200, int(video_height - 50))
+    groove_color = (0, 255, 0)
+
+    strong_beat_pos = (1600, int(video_height - 50))
+    strong_beat_color = (0, 165, 255)
 
     alpha = 0.90
 
@@ -222,7 +223,7 @@ def main():
 
     print("Marking beat and head bop positions on output frames")
 
-    frame_history = 5  # consider 5 seconds of audio
+    frame_history = 3  # consider this many seconds of history for bpm computation
 
     all_beats_bpm = 0
     strong_beats_bpm = 0
@@ -257,14 +258,10 @@ def main():
         ]
 
         all_beats_bpm_tmp = bpm_from_beats(all_beat_history)
-        strong_beats_bpm_tmp = bpm_from_beats(strong_beat_history)
         bop_bpm_tmp = bpm_from_beats(bop_history)
 
         if not numpy.isnan(all_beats_bpm_tmp):
             all_beats_bpm = all_beats_bpm_tmp
-
-        if not numpy.isnan(strong_beats_bpm_tmp):
-            strong_beats_bpm = strong_beats_bpm_tmp
 
         if not numpy.isnan(bop_bpm_tmp):
             bop_bpm = bop_bpm_tmp
@@ -286,6 +283,8 @@ def main():
             is_strong_beat = True
         if any([b for b in bop_locations if numpy.abs(b - frame_time) <= event_thresh]):
             is_bop = True
+
+        is_groove = is_bop and is_beat
 
         if is_beat:
             cv2.putText(
@@ -320,16 +319,6 @@ def main():
                 3,
                 cv2.LINE_AA,
             )
-        cv2.putText(
-            frame,
-            "{0:.2f} bpm".format(strong_beats_bpm),
-            strong_beat_bpm_pos,
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1.0,
-            strong_beat_color,
-            2,
-            cv2.LINE_AA,
-        )
 
         if is_bop:
             cv2.putText(
@@ -352,6 +341,18 @@ def main():
             2,
             cv2.LINE_AA,
         )
+
+        if is_groove:
+            cv2.putText(
+                frame,
+                "GROOVE",
+                groove_pos,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                2.0,
+                groove_color,
+                3,
+                cv2.LINE_AA,
+            )
         return frame
 
     print(

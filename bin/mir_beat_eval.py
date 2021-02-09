@@ -15,6 +15,7 @@ import mir_eval.beat as mir_eval_beat
 from mir_eval import util
 from mir_eval.io import load_events as mir_eval_txt_beats
 from tabulate import tabulate
+import itertools
 
 # audio MUST be loaded at 44100
 
@@ -48,7 +49,17 @@ def precision_recall(reference_beats, estimated_beats, f_measure_threshold=0.07)
 
 pool = multiprocessing.Pool(16)
 
-cbt = ConsensusBeatTracker(pool)
+cbts = []
+
+algos = [1,2,3,4,5,6]
+algo_combos = []
+
+for i in range(len(algos)):
+    for algo_combo in itertools.combinations(algos, i+1):
+        algo_combos.append(','.join([str(x) for x in algo_combo]))
+
+for ag in algo_combos:
+    cbts.append(ConsensusBeatTracker(pool, algorithms=ag))
 
 
 def eval_beats(signal, ground_truth):
@@ -56,15 +67,16 @@ def eval_beats(signal, ground_truth):
     act_beat = madmom.features.beats.RNNBeatProcessor()(signal)
 
     beat_times_1 = proc_beat(act_beat)
-    beat_times_2 = cbt.beats(signal)
 
-    ret = numpy.zeros(dtype=numpy.float32, shape=(2, 6))
+    n_algos = len(cbts)+1
+
+    ret = numpy.zeros(dtype=numpy.float32, shape=(n_algos, 6))
 
     gt_trimmed = mir_eval_beat.trim_beats(ground_truth)
-    b1_trimmed = mir_eval_beat.trim_beats(beat_times_1)
-    b2_trimmed = mir_eval_beat.trim_beats(beat_times_2)
 
-    for i, beats in enumerate([b1_trimmed, b2_trimmed]):
+    beat_times = [mir_eval_beat.trim_beats(beat_times_1)] + [mir_eval_beat.trim_beats(cbt.beats(signal)) for cbt in cbts]
+
+    for i, beats in enumerate(beat_times):
         ret[i][0] = mir_eval_beat.f_measure(gt_trimmed, beats)
         ret[i][1] = mir_eval_beat.cemgil(gt_trimmed, beats)[0]
         ret[i][2] = mir_eval_beat.goto(gt_trimmed, beats)
@@ -110,7 +122,7 @@ def main():
                     prefix = "_".join(f.split(".")[0].split("_")[:2])
                     wav_gt[prefix]["groundtruth"] = os.path.join(dir_name, f)
 
-    total_results = numpy.zeros(dtype=numpy.float, shape=(len(wav_gt), 2, 6))
+    total_results = numpy.zeros(dtype=numpy.float, shape=(len(wav_gt), len(cbts)+1, 6))
 
     seq = 0
     for item, wav_gt_pair in tqdm(wav_gt.items()):
@@ -132,7 +144,10 @@ def main():
         "Precision",
         "Recall",
     ]
-    algos = ["SB1", "consensus"]
+    algos = ["SB1"]
+    for i, cbt in enumerate(cbts):
+        algos.append("consensus"+cbt.algorithms)
+
     table = []
 
     for i, algo in enumerate(algos):
