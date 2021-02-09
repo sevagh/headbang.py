@@ -223,7 +223,7 @@ def main():
 
     print("Marking beat and head bop positions on output frames")
 
-    frame_history = 5  # consider 5 seconds of audio
+    frame_history = 3  # consider this many seconds of history for bpm computation
 
     all_beats_bpm = 0
     strong_beats_bpm = 0

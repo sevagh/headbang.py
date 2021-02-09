@@ -179,7 +179,7 @@ def main():
     # if stereo, write it that way for higher quality
     x_stereo = load_wav(args.wav_in, stereo=True)
 
-    if x_stereo.shape[1] == 2:
+    if len(x_stereo.shape) > 1 and x_stereo.shape[1] == 2:
         clicks = numpy.column_stack((clicks, clicks))  # convert to stereo
 
     final_waveform = (x_stereo + clicks).astype(numpy.single)
