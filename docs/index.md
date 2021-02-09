@@ -168,26 +168,14 @@ for harm_window in 256 1024 4096 16384; do
 done
 ```
 
-Songs used throughout testing included (but were not limited to):
-* Anup Sastry - Enigma
-* Anup Sastry - Origin
-* Anup Sastry - Limitless
-* Volumes - The Mixture
-* Animals as Leaders - Wave of Babies
-* Animals as Leaders - Tooth and Claw
-* Periphery - Make Total Destroy
-* Periphery - Blood Eagle
-* Periphery - The Bad Thing
-* Periphery - Omega
-* Periphery - Eureka
-* Vitalism - Pagan
-* Vitalism - Luxata
-
 Here's a table of some interesting outputs of headbang's algorithms:
 
 | Song | madmom DBN | ConsensusBeatTracker | HeadbangBeatTracker |
 |------|------------|----------------------|---------------------|
-| Tyler the Creator - Who Dat Boy | [whodatboy_dbn.wav](./whodatboy_dbn.wav) | [whodatboy_cbt.wav](./whodatboy_cbt.wav) | [whodatboy_hbt.wav](./whodatboy_hbt.wav) |
+| [Tyler the Creator - Who Dat Boy](https://www.youtube.com/watch?v=NpuV825cMuA) | [whodatboy_dbn.wav](./whodatboy_dbn.wav) | [whodatboy_cbt.wav](./whodatboy_cbt.wav) | [whodatboy_hbt.wav](./whodatboy_hbt.wav) |
+| [Periphery - The Bad Thing](https://www.youtube.com/watch?v=ljwwIpPbrJM) | [badthing_dbn.wav](./badthing_dbn.wav) | [badthing_cbt.wav](./badthing_cbt.wav) | [badthing_hbt.wav](./badthing_hbt.wav) |
+| [Volumes - The Mixture](https://www.youtube.com/watch?v=VaE62m_a8oQ) | [themixture_dbn.wav](./themixture_dbn.wav) | [themixture_cbt.wav](./themixture_cbt.wav) | [themixture_hbt.wav](./themixture_hbt.wav) |
+| [Vitalism - Luxata](https://www.youtube.com/watch?v=Pru_5HW9Ofg) | [luxata_dbn.wav](./luxata_dbn.wav) | [luxata_cbt.wav](./luxata_cbt.wav) | [luxata_hbt.wav](./luxata_hbt.wav) |
 
 ## References
 
