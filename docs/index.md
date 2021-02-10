@@ -24,6 +24,8 @@ For example, during a segment of the song where there is a lull and the drums ar
 
 ## Block diagram
 
+Both ConsensusBeatTracker and HeadbangBeatTracker are _offline_, or non-realtime, algorithms. They need access to the whole song.
+
 ![hbt_block_diagram](./hbt_block_diagram.png)
 
 ## Algorithm 1 - ConsensusBeatTracker
@@ -200,8 +202,41 @@ Here's a table of some interesting outputs of headbang's algorithms:
       <td>{% include embed-audio.html src="luxata_dbn.wav" %}</td>
       <td>{% include embed-audio.html src="luxata_hbt.wav" %}</td>
     </tr>
+    <tr>
+      <td><a href="https://www.youtube.com/watch?v=8niG0ta4jZs">Anup Sastry - Origin</a></td>
+      <td>{% include embed-audio.html src="origin_dbn.wav" %}</td>
+      <td>{% include embed-audio.html src="origin_hbt.wav" %}</td>
+    </tr>
   </tbody>
 </table>
+
+### Execution time
+
+HeadbangBeatTracker is resource-intensive - beyond applying 6 beat tracking algorithms in parallel, it performs harmonic-percussive source separation, parallelized subband transient shaping across 24 Bark bands, parallelized computation of HFC and RMS onsets, and onset detection - lots of work.
+
+Here are some execution times on a 3 minute 25 second song:
+
+```
+# madmom DBN
+$ time ./bin/reference_beats.py testcases/hbt/whodatboy.opus testcases/dbn-results/whodatboy.wav
+real    0m25.860s
+user    0m25.562s
+sys     0m0.781s
+
+# consensus beat tracker (no percussive onset alignment)
+# limited by its slowest beat tracker - 6 total beat trackers in parallel
+$ time ./bin/beat_track.py --disable-onsets testcases/hbt/whodatboy.opus testcases/dbn-results/whodatboy.wav
+real    0m34.484s
+user    2m38.270s
+sys     0m3.642s
+
+# headbang beat tracker
+# 6 beat trackers + percussive onset alignment stage
+$ time ./bin/beat_track.py testcases/hbt/whodatboy.opus testcases/dbn-results/whodatboy.wav
+real    2m22.342s
+user    15m25.341s
+sys     0m16.574s
+```
 
 ## MIREX-inspired evaluation and results
 
