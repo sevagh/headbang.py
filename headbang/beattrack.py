@@ -78,12 +78,14 @@ class ConsensusBeatTracker:
             zip(itertools.repeat(x), self.beat_tracking_algorithms),
         )
 
-        self.beat_results = [b.astype(numpy.single) for b in beat_results]
-
         beat_consensus = None
-        if len(self.beat_results) > 1:
+        if len(beat_results) > 1:
+            # must cast to single for essentia
+            self.beat_results = [b.astype(numpy.single) for b in beat_results]
             beat_consensus, _ = self.ttap(self.beat_results)
         else:
-            beat_consensus = self.beat_results[0]
+            print('single case!')
+            self.beat_results =  beat_results
+            beat_consensus = beat_results[0]
 
         return beat_consensus

@@ -54,9 +54,10 @@ cbts = []
 algos = [1, 2, 3, 4, 5, 6]
 algo_combos = []
 
-for i in range(len(algos)):
-    for algo_combo in itertools.combinations(algos, i + 1):
-        algo_combos.append(",".join([str(x) for x in algo_combo]))
+#for i in range(len(algos)):
+#    for algo_combo in itertools.combinations(algos, i + 1):
+#        algo_combos.append(",".join([str(x) for x in algo_combo]))
+algo_combos = ["1"]
 
 for ag in algo_combos:
     cbts.append(ConsensusBeatTracker(pool, algorithms=ag))

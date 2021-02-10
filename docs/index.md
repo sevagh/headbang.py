@@ -22,6 +22,10 @@ The original motivation of `HeadbangBeatTracker` was to only predict beats that 
 
 For example, during a segment of the song where there is a lull and the drums are silent, there may be a silent/implicit beat, but `HeadbangBeatTracker` will not emit any clicks. The code has been tested mostly on prog metal and djent - Vitalism, Kadinja, Periphery, Anup Sastry, Meshuggah, Animals as Leaders, etc. As there are no ground truth annotations for such music, all of the testing and verification was done manually by yours truly, with some helper scripts - the workflow will be described later on.
 
+## Block diagram
+
+![hbt_block_diagram](./hbt_block_diagram.png)
+
 ## Algorithm 1 - ConsensusBeatTracker
 
 The first algorithm of the `headbang` library is a consensus/ensemble beat tracker, implemented in the `ConsensusBeatTracker` class. The following visuals describe how the algorithm works at a high level. All plots were generated with [matplotlib](https://matplotlib.org/).
@@ -101,7 +105,7 @@ The parameters of the HPSS can be modified (but I don't find it changes the resu
 
 ![percussive_transient_enhanced](percussive_transient_enhanced.png)
 
-The parameters for the transient enhancer can be modified, but similar to HPSS, not likely to change your results drastically:
+The parameters for the transient enhancer can be modified, but are not likely to change your results drastically (similar to HPSS):
 * `fast_attack_ms=1`
 * `slow_attack_ms=15`
 * `release_ms=20`
@@ -133,8 +137,6 @@ The final waveform contains consensus beats supplemented with extra percussive o
 ![input_waveform_final_beats](input_waveform_final_beats.png)
 
 This is the final output of the **HeadbangBeatTracker**.
-
-## Block diagram
 
 ## Perceptual evaluation
 
@@ -233,13 +235,15 @@ The median score for each of the six measure was taken across the 218 tracks of 
 
 ### Results
 
-Output results:
-```
-| algorithm   |   F-measure |     Cemgil |      Goto |   McKinney P-score |   Precision |     Recall |
-|-------------|-------------|------------|-----------|--------------------|-------------|------------|
-| SB1         |  0.55288    | 0.436283   | 0.225806  |         0.649583   |   0.537928  | 0.602492   |
-| consensus   |  0.46131    | 0.360548   | 0.0368664 |         0.527189   |   0.411873  | 0.576754   |
-```
+For brevity, the results for all combinations are omitted (but available in the repo). Most notable is that some combinations of consensus managed to get a higher Goto score than the MIREX 2019 winner on its own:
+
+| algorithm           |   F-measure |    Cemgil |      Goto  |   McKinney P-score |   Precision |    Recall |
+|---------------------|-------------|-----------|------------|--------------------|-------------|-----------|
+| SB1                 |   0.55288   |  0.436283 |   0.225806 |           0.649583 |   0.537928  |  0.602492 |
+| consensus1,2,5      |   0.537942  |  0.42607  |   0.24424  |           0.6466   |   0.526321  |  0.582903 |
+| consensus1,2,4,5,6  |   0.534229  |  0.422364 |   **0.248848** |           0.646149 |   0.520878  |  0.582347 |
+| consensus1,2,3,6    |   0.532419  |  0.422973 |   **0.248848** |           0.637248 |   0.516854  |  0.585059 |
+| consensus1,2,3,5    |   0.529991  |  0.417679 |   0.24424  |           0.637775 |   0.514784  |  0.582063 |
 
 # headbang-hud: combining MIR and 2D pose estimation
 
@@ -363,14 +367,30 @@ Although all the talk is about metal so far, it works well on the above rap song
 Here's a clip from drummer [Anup Sastry - Titan](https://www.youtube.com/watch?v=Y82rls0yoAM), where the motion is tracked on the left and right arms (instead of the head and neck):
 {% include embed-video.html src="anupsastry_short.mp4" %}
 
-## Code design diagram
+## Code diagram
 
-inkscape diagram
-2 passes to avoid oom. moviepy write to tmp file
+![hud_code_arch](./hud_code_arch.png)
 
-# Discussion, conclusion, etc.
+Note the two-step process:
+1. First, the video is stepped through frame by frame to apply OpenPose pose detection
+2. The resultant frames (with drawn keypoints) are written to a tmp mp4 file
+3. y coordinates are accumulated per-frame to track motion throughout the video and pick peaks
+4. Beats are computed from the audio 
+5. The tmp mp4 file is loaded frame by frame, bop/beat/tempo values are drawn on the respective frames, and the result is written to the final output file
 
-mention this also, another OpenPose music paper - replace beat tracking with pose detection - waw: https://program.ismir2020.net/poster_3-10.html
+The two-pass design was chosen out of necessity; keeping all of the frames of the video in-memory while performing all of the processing was leading to huge memory usage (32+GB) for long videos.
+
+# Discussion
+
+From [[20]](#20), [[22]](#22), and [[23]](#23), we can see multiple new (2020) papers that consider human pose and motion alongside traditional MIR techniques.
+
+In headbang.py, two aspects of beat tracking were explored:
+* First, a beat tracking algorithm was designed to mimic how a person would headbang (only emit strong beats, no hidden or silent beats, keep beats spaced apart by a window, etc.).
+    * I hope that from the perceptual results, I have convinced you that `HeadbangBeatTracker` emits good results that can be used for a variety of tasks, such as beat-driven animations or visual effects.
+    * From the MIREX SMC testbench, we can see that some configurations of the `ConsensusBeatTracker` can rival the Goto score of the standalone DBN beat tracker, demonstrating the effectiveness of ensemble or consensus-based techniques. In spite of this outcome, the default of the project is still set to all 6 algorithms (for producing the best perceptual results in the overall `HeadbangBeatTracker`, in my opinion).
+* Second, musical videos with people headbanging (or moving in general) were analyzed, and peaks in motion were tracked and displayed along with the beat tracking outputs of `HeadbangBeatTracker`.
+
+The code uses modern Python (3.7+), is intentionally lightweight to be extended and modified, and uses well-known and leading open-source libraries for math and numerical computing (numpy, scipy, matplotlib), MIR (essentia, madmom, librosa),  and computer vision (OpenCV, OpenPose).
 
 # References
 
@@ -436,3 +456,9 @@ Quantifying music-dance synchrony with the application of a deep learning-based 
 
 <a id="21">[21]</a>
 Z. Cao, G. Hidalgo, T. Simon, S. -E. Wei and Y. Sheikh, "OpenPose: Realtime Multi-Person 2D Pose Estimation Using Part Affinity Fields," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 43, no. 1, pp. 172-186, 1 Jan. 2021, doi: 10.1109/TPAMI.2019.2929257. <https://arxiv.org/pdf/1812.08008.pdf>
+
+<a id="22">[22]</a>
+Schindler, Alexander. (2020). Multi-Modal Music Information Retrieval: Augmenting Audio-Analysis with Visual Computing for Improved Music Video Analysis. <https://arxiv.org/pdf/2002.00251.pdf>
+
+<a id="23">[23]</a>
+Fabrizio Pedersoli, Masataka Goto, "Dance Beat Tracking from Visual Information Alone", ISMIR 2020. <https://program.ismir2020.net/poster_3-10.html>
