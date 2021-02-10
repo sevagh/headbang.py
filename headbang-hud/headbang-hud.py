@@ -32,7 +32,7 @@ class OpenposeDetector:
     face_neck_keypoints = [0, 1, 15, 16, 17, 18]
     confidence_threshold = 0.2
 
-    def __init__(self):
+    def __init__(self, custom_keypoints=None):
         config = {}
         # config["dir"] = openpose_install_path
         config["logging_level"] = 3
@@ -54,11 +54,13 @@ class OpenposeDetector:
         self.opWrapper.configure(config)
         self.opWrapper.start()
 
-        # self.poseModel = op.PoseModel.BODY_25
-        # print(op.getPoseBodyPartMapping(self.poseModel))
-        # print(op.getPoseNumberBodyParts(self.poseModel))
-        # print(op.getPosePartPairs(self.poseModel))
-        # print(op.getPoseMapIndex(self.poseModel))
+        if custom_keypoints:
+            keypoints = [int(i) for i in custom_keypoints.split(",")]
+            self.keypoints = keypoints
+        else:
+            self.keypoints = OpenposeDetector.face_neck_keypoints
+
+        print(self.keypoints)
 
     def detect_pose(self, image):
         datum = op.Datum()
@@ -81,7 +83,7 @@ class OpenposeDetector:
             head_poses = [
                 (d[0], d[1])
                 for i, d in enumerate(detected_poses)
-                if i in OpenposeDetector.face_neck_keypoints
+                if i in self.keypoints
                 and d[2] > OpenposeDetector.confidence_threshold
             ]
 
@@ -109,10 +111,13 @@ def main():
     parser = argparse.ArgumentParser(
         description="Track human pose in videos with music alongside groove metrics and beat tracking"
     )
+    parser.add_argument('--custom-keypoints', type=str, help="Override the default face/neck keypoints")
     parser.add_argument("mp4_in", type=str, help="mp4 file to process")
     parser.add_argument("mp4_out", type=str, help="mp4 output path")
 
     args = parser.parse_args()
+
+    pose_tracker = OpenposeDetector(custom_keypoints=args.custom_keypoints)
 
     video_path = args.mp4_in
     cap = cv2.VideoCapture(video_path)
@@ -147,8 +152,6 @@ def main():
 
     plot_width = int(video_width / 4)
     plot_height = int(video_height / 4.5)
-
-    pose_tracker = OpenposeDetector()
 
     bop_pos = (100, int(video_height - 50))
     bop_bpm_pos = (280, int(video_height - 50))

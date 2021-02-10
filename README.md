@@ -43,3 +43,43 @@ You can choose to omit BTrack (and run the program without `--algorithm 8`), but
 More beat trackers are always welcome. The results would probably get better if more diverse beat trackers are added to the group.
 
 There are many arguments, but for a prog metal song, you should be fine with the defaults. Of course, I always encourage experimentation. The [github-pages site](https://sevagh.github.io/headbang.py) should provide clarity on which part of the algorithm is affected by the various input arguments.
+
+# headbang-dashboard
+
+## Installation and usage
+
+Installing groove-dashboard is more complicated than `pip install -r requirements.txt`, due to using two libraries that are not on PyPi and need to be built from source:
+* https://github.com/CMU-Perceptual-Computing-Lab/openpose
+* https://github.com/adamstark/BTrack
+
+I followed both of their instructions for building and installing the Python module successfully on Python 3.7, Fedora 32, amd64.
+
+groove-dashboard is opinionated and doesn't have many arguments or flags. Call it on the input video file (any format supported by [moviepy](https://github.com/Zulko/moviepy)):
+```
+$ groove-dashboard input.mp4 output.mp4 --wav-click-prefix output
+[   INFO   ] MusicExtractorSVM: no classifier models were configured by default
+Starting OpenPose Python Wrapper...
+Auto-detecting all available GPUs... Detected 1 GPU(s), using 1 of them starting at GPU 0.
+100%|████████████████████████████████████████████████████████████████████████████████████████| 845/845 [06:16<00:00,  2.24it/s]
+Getting beat locations using consensus beat tracking
+Marking beat and head bop positions on output frames
+845it [00:00, 4221.41it/s]
+Writing output mp4 groove dashboard
+Moviepy - Building video output.mp4.
+MoviePy - Writing audio in outputTEMP_MPY_wvf_snd.mp3
+MoviePy - Done.
+Moviepy - Writing video output.mp4
+
+Moviepy - Done !
+Moviepy - video ready output.mp4
+Writing clicks overlaid on groove positions to wav file
+MoviePy - Writing audio in output-beat.wav
+MoviePy - Done.
+MoviePy - Writing audio in output-bop.wav
+MoviePy - Done.
+MoviePy - Writing audio in output-groove.wav
+MoviePy - Done.
+```
+The output mp4 video contains the original video and audio, overlaid with plots and annotations created by groove-dashboard. Additionally, if `--wav-click-prefix` is set, 3 wav clips are also output, overlaying clicks on beat, headbang, and "groove" (i.e. synchronous beat and headbang) locations - click tracks are the best way to observe event detection in MIR (in my opinion).
+
+

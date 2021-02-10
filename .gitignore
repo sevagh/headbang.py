@@ -12,3 +12,4 @@ __pycache__
 docs/_site
 /build
 !docs/*.wav
+!docs/*.mp4
