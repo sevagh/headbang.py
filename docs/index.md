@@ -162,7 +162,7 @@ for harm_frame in 256 1024 4096 16384; do
     ./bin/beat_track.py \
         --harmonic-frame=$harm_frame \
         input_metal_song.wav \
-        output_metal_song_harm_window_$harm_window.wav
+        output_metal_song_harm_frame_$harm_frame.wav
 done
 ```
 
