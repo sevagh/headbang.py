@@ -60,8 +60,6 @@ class OpenposeDetector:
         else:
             self.keypoints = OpenposeDetector.face_neck_keypoints
 
-        print(self.keypoints)
-
     def detect_pose(self, image):
         datum = op.Datum()
         datum.cvInputData = image

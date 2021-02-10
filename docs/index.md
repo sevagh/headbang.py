@@ -24,7 +24,7 @@ For example, during a segment of the song where there is a lull and the drums ar
 
 ## Algorithm 1 - ConsensusBeatTracker
 
-The first algorithm of the `headbang` library is a consensus/ensemble beat tracker, implemented in the `ConsensusBeatTracker` class. The following visuals describe how the algorithm works at a high level:
+The first algorithm of the `headbang` library is a consensus/ensemble beat tracker, implemented in the `ConsensusBeatTracker` class. The following visuals describe how the algorithm works at a high level. All plots were generated with [matplotlib](https://matplotlib.org/).
 
 **Input** is provided as a single audio file containing the full-length metal song:
 
@@ -37,14 +37,12 @@ Note that the plots are generated with a small segment (15s) extracted from a fu
 ![input_waveform_all_beats](./input_waveform_all_beats.png)
 
 The list of beat trackers consist of:
-1. [madmom](https://madmom.readthedocs.io/en/latest/modules/features/beats.html) RNNBeatProcessor -> DBNBeatTrackingProcessor
-2. madmom RNNBeatProcessor -> BeatDetectionProcessor
-3. [Essentia BeatTrackerMultiFeature](https://essentia.upf.edu/reference/std_BeatTrackerMultiFeature.html)
-4. [Essentia BeatTrackerDegara](https://essentia.upf.edu/reference/std_BeatTrackerDegara.html)
-5. [librosa beat_track](https://librosa.org/doc/latest/generated/librosa.beat.beat_track.html)
-6. [BTrack](https://github.com/adamstark/BTrack)
-
-The list can be controlled via the `algorithms="1,2,3,4,5,6"` parameter.
+1. [madmom](https://madmom.readthedocs.io/en/latest/modules/features/beats.html) RNNBeatProcessor[[1]](#1) -> DBNBeatTrackingProcessor[[2]](#2)
+2. madmom RNNBeatProcessor -> BeatDetectionProcessor[[3]](#3)
+3. [Essentia](https://essentia.upf.edu/reference/std_BeatTrackerMultiFeature.html) BeatTrackerMultiFeature[[4]](#4)
+4. [Essentia](https://essentia.upf.edu/reference/std_BeatTrackerDegara.html) BeatTrackerDegara[[5]](#5)
+5. [librosa](https://librosa.org/doc/latest/generated/librosa.beat.beat_track.html) beat_track[[6]](#6)
+6. [BTrack](https://github.com/adamstark/BTrack)[[7]](#7)
 
 These are executed in parallel using Python's [multiprocessing](https://docs.python.org/3/library/multiprocessing.html) module. The code is designed to be executed by the pool [`starmap`](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.Pool.starmap) pool function:
 ```python
@@ -73,7 +71,9 @@ apply_single_beattracker(x, 2)
 ...
 ```
 
-**Consensus** of these beats is taken with [essentia's TempoTapMaxAgreement](https://essentia.upf.edu/reference/std_TempoTapMaxAgreement.html):
+The beat trackers can be controlled via the `algorithms="1,2,3,4,5,6"` parameter.
+
+**Consensus** of these beats is taken with [essentia's TempoTapMaxAgreement](https://essentia.upf.edu/reference/std_TempoTapMaxAgreement.html)[[8]](#8)
 
 Previously, I invented my own consensus algorithm using numpy, by counting beat locations from different algorithms that were within a threshold of each other and had sufficient agreement. I discovered through trial and error that TempoTapMaxAgreement did a much better job:
 
@@ -85,29 +85,40 @@ At this point, these are usable outputs of the standalone **ConsensusBeatTracker
 
 The HeadbangBeatTracker first gathers beats using the ConsensusBeatTracker, and then applies post-processing for percussive onset alignment. To disable the onset alignment and return the consensus results only, set the parameter `disable_onsets=True`.
 
-**Percussion is separated** from the input signal with [median-filtering Harmonic-Percussive Source Separation](https://librosa.org/doc/0.8.0/generated/librosa.decompose.hpss.html):
+**Percussion is separated** from the input signal with Harmonic-Percussive Source Separation:
 
 ![percussive_hpss](percussive_hpss.png)
 
-**TODO** The parameters that control the HPSS step are `harmonic_frame=16384`, `percussive_frame=256`, `harmonic_margin=2.3`, `percussive_margin=2.3`. To be brief, an optimal percussion separation (using pure DSP, not fancy modern machine learning source separation) is achieved doing a first pass with a high frequency resolution, to isolate harmonic, pitched sounds (frame size of 16384), and a second pass with a high time resolution (frame size of 256). Further reading at Driedger,  Fitzgerald, Music-Separation-TF.
+The algorithm used is one based on median filtering the spectrogram, originally described in [[9]](#9), and further improved with iterative algorithm in [[10]](#10). I use the [librosa implementation](https://librosa.org/doc/0.8.0/generated/librosa.decompose.hpss.html), which has a good visualization of the effect.
 
-**Transients are enhanced** using my [multi-band transient enhancer](https://gitlab.com/sevagh/multiband-transient-shaper), which is an adaptation of the SPL differential envelope transient shaper[[1]](#1).
+The parameters of the HPSS can be modified (but I don't find it changes the results significantly):
+* `harmonic_frame=16384` (a larger frame size in the first iteration gives us higher frequency resolution which helps separate pitched, harmonic components)
+* `harmonic_margin=2.3` (how strong the separation is)
+* `percussive_frame=256` (a smaller frame size in the second iteration gives us higher time resolution which helps separate short, sharp percussive events)
+* `percussive_margin=2.3`
 
-This enhances the percussive attacks and gates sustained/steady-state sounds, making a more sparse "drum hit waveform":
+**Transients are enhanced** using a differential-envelope transient enhancer adapted from the SPL differential envelope transient shaper[[1]](#1). This enhances the percussive attacks and gates sustained/steady-state sounds, making a more sparse "drum hit waveform":
 
 ![percussive_transient_enhanced](percussive_transient_enhanced.png)
 
-**Onset detection** is performed using a combination of 2 onset detection functions, hfc, and rms (from [Essentia](https://essentia.upf.edu/reference/streaming_OnsetDetection.html)), weighted most heavily on hfc for percussive event detection:
+The parameters for the transient enhancer can be modified, but similar to HPSS, not likely to change your results drastically:
+* `fast_attack_ms=1`
+* `slow_attack_ms=15`
+* `release_ms=20`
+* `power_memory_ms=1`
+* `filter_order=3`
+
+Reading through one of my previous projects, [multiband-transient-shaper](https://gitlab.com/sevagh/multiband-transient-shaper), or the [SPL design manual](https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf) should help shed some light on those parameters - or, if you have audio production/recording experience, you may recognize those parameters from dynamic range compressors/expanders/noise gates - but much of it was discovered through trial and error.
+
+**Onset detection** is performed using a combination of 2 onset detection functions, HFC[[12]](#12), and RMS[[13]](#13) (from [Essentia](https://essentia.upf.edu/reference/streaming_OnsetDetection.html)), weighted most heavily on HFC for percussive event detection:
 
 ![percussive_onsets](percussive_onsets.png)
 
-**Beats are aligned with percussive onsets**, to eliminate predicted beats that don't fall on a percussive attack.
-
-Beats and onsets that lie within `onset_align_threshold_s=0.07` seconds of each are considered aligned:
+**Beats are aligned with percussive onsets**, to eliminate predicted beats that don't fall on a percussive attack. Beats and onsets that lie within `onset_align_threshold_s=0.07` seconds of each are considered aligned:
 
 ![input_waveform_beats_onsets_aligned](input_waveform_beats_onsets_aligned.png)
 
-The value of 0.07 was inspired by mir_eval, which uses a window of 0.07 seconds to consider two beats to be equivalent events (when evaluating beat tracking results of an algorithm vs. the ground truth annotations).
+The value of 0.07 was inspired by [mir_eval](https://github.com/craffel/mir_eval/blob/master/mir_eval/beat.py#L138), which uses a window of 0.07 seconds to consider two beats to be equivalent events (when evaluating beat tracking results of an algorithm vs. the ground truth annotations).
 
 **Sections with no beats are supplemented with percussive onsets**
 
@@ -192,14 +203,14 @@ Here's a table of some interesting outputs of headbang's algorithms:
 
 ## MIREX-inspired evaluation and results
 
-I evaluated headbang's `ConsensusBeatTracker` against the MIREX SMC12 dataset[[2]](#2), using the [mir_eval](https://github.com/craffel/mir_eval) library[[3]](#3). [MIREX 2019](https://www.music-ir.org/mirex/wiki/2019:MIREX2019_Results) is the most recent year of the audio beat tracking challenge (2020 results are not ready yet).
+I evaluated headbang's `ConsensusBeatTracker` against the MIREX SMC12 dataset[[14]](#14), using the [mir_eval](https://github.com/craffel/mir_eval) library[[15]](#15). [MIREX 2019](https://www.music-ir.org/mirex/wiki/2019:MIREX2019_Results) is the most recent year of the audio beat tracking challenge (2020 results are not ready yet).
 
 The summary of MIREX 2019 results on the SMC dataset is:
 ![mirex19](./mirex19.png)
 
-To anchor my own evaluation to the above, I will include results for the consensus beat tracker alongside the madmom [DBNBeatTracker](https://github.com/CPJKU/madmom/blob/master/bin/DBNBeatTracker)[[4]](#4), or SB1 in the above table. Note that this beat tracker is among the 8 used in my consensus algorithm.
+To anchor my own evaluation to the above, I will include results for the consensus beat tracker alongside the madmom [DBNBeatTracker](https://github.com/CPJKU/madmom/blob/master/bin/DBNBeatTracker)[[2]](#2), or SB1 in the above table. Note that this beat tracker is among the 8 used in my consensus algorithm.
 
-The 4 measures that will be evaluated (F-measure, Cemgil, Goto, and McKinney P-Score) are the same as those used in MIREX, and are borrowed from the [Beat Evaluation Toolbox](https://code.soundsoftware.ac.uk/projects/beat-evaluation/)[[5]](#5).
+The 4 measures that will be evaluated (F-measure, Cemgil, Goto, and McKinney P-Score) are the same as those used in MIREX, and are borrowed from the [Beat Evaluation Toolbox](https://code.soundsoftware.ac.uk/projects/beat-evaluation/)[[16]](#16).
 
 An additional 2 measures were added by splitting the F-measure into its constituent precision and recall (simply by copy-pasting the mir_eval f_measure function and returning the individual measures). This should help with a more fine-grained analysis of results. My hypothesis is that the precision of `ConsensusBeatTracker` could be higher at the expense of recall. In other words, it makes less beat predictions, due to the constraining nature of consensus, but the ones it does make should be very accurate.
 
@@ -251,23 +262,23 @@ The hypothesis is that certain parts of songs are so groovy that they impel eith
 
 ## Groove
 
-headbang-hud started off as groove-dashboard, inspired by this paper[[1]](#1), which associates audio signal features or MIR features to human judgements of groove. The paper defines groove as follows:
+headbang-hud started off as groove-dashboard, inspired by this paper[[17]](#17), which associates audio signal features or MIR features to human judgements of groove. The paper defines groove as follows:
 
 >The experience of groove is associated with the urge to move to a musical rhythm
 
 From this definition I was inspired to look towards the field of computer vision and pose estimation to track the motion jointly with musical measures of groove.
 
-Strong beats are also associated with groove[[11]](#11), [[12]](#12). The two beat tracking algorithms presented in the first part of the website will be used to compute beats and strong beats.
+Strong beats are also associated with groove[[18]](#18), [[19]](#19), which ties in to the two beat tracking algorithms described previously.
 
 ## 2D pose estimation with OpenPose
 
-The pose estimation component was inspired by the preprinted paper [[14]](#14), at a high level. That paper analyzes beat synchrony of salsa dancers' foot motion. The ideas borrowed were to:
+The pose estimation component was inspired by the preprinted paper [[20]](#20), at a high level. That paper analyzes beat synchrony of salsa dancers' foot motion. The ideas borrowed were to:
 * Use OpenPose to get 2D coordinates for detected keypoints of the body parts of interest
 * Normalize the coordinates
 * Record the normalized coordinates per frame of the video
 * Use peak picking to estimate peaks in motion
 
-[OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) is a "real-time multi-person keypoint detection library for body, face, hands, and foot estimation"[[13]](#13), written in C++, along with a Python wrapper. When you pass a frame of a video through OpenPose, it returns the detected human pose keypoints and a copy of the frame with the keypoints drawn over it:
+[OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) is a "real-time multi-person keypoint detection library for body, face, hands, and foot estimation"[[21]](#21), written in C++, along with a Python wrapper. When you pass a frame of a video through OpenPose, it returns the detected human pose keypoints and a copy of the frame with the keypoints drawn over it:
 
 [![openpose_draw](headbop.png)](https://www.youtube.com/watch?v=DPC9erC5WqU)
 
@@ -288,8 +299,8 @@ These peaks in y coordinate motion of the head and torso are called "bops", or t
 ### Using different keypoints
 
 The command line flag `--custom-keypoints` takes a comma-separated string representing different BODY_25 pose keypoints (overriding the default face and neck). All possible values can be seen here:
-* https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/18de3a0010dd65484b3eb357b5c3679c9a2fdf43/doc/02_output.md#pose-output-format-body_25
-* https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/18de3a0010dd65484b3eb357b5c3679c9a2fdf43/doc/02_output.md#keypoint-ordering-in-cpython
+* <https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/18de3a0010dd65484b3eb357b5c3679c9a2fdf43/doc/02_output.md#pose-output-format-body_25>
+* <https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/18de3a0010dd65484b3eb357b5c3679c9a2fdf43/doc/02_output.md#keypoint-ordering-in-cpython>
 
 For example, in the drummer demo, I used `./headbang-hud/headbang-hud.py --custom-keypoints "2,3,4,5,6,7"` - those keypoints correspond to the left and right arms (shoulder, elbow, wrist).
 
@@ -312,6 +323,27 @@ def bpm_from_beats(beats):
 In the code, events (beats or bops) from the last 3 seconds of history are considered in the bpm computation, so it may take some time for the bpm to "converge" to correctness after a stable sequence of events.
 
 Also, the subjects in the video may move however they want - finding a stable bpm from motion depends on processing frames displaying very clear and stable periodic motion, but sequences like this are rare in natural videos.
+
+With a minimal test we can verify the correct functioning of the bpm function:
+```python
+duration = 10
+bpms = [60, 72, 75, 83, 95, 113, 152]
+
+for bpm in bpms:
+    step = 60/bpm
+    bop_times = numpy.arange(0, duration, step)
+
+    print(bpm_from_beats(bop_times))
+
+# OUTPUTS:
+# 60.0
+# 72.0
+# 74.99999999999999
+# 83.00000000000001
+# 95.00000000000003
+# 112.99999999999999
+# 152.00000000000003
+```
 
 ## Demos
 
@@ -343,60 +375,64 @@ mention this also, another OpenPose music paper - replace beat tracking with pos
 # References
 
 <a id="1">[1]</a>
-Gier, H & Paul White, "SPL Transient Designer, DUAL-CHANNEL, Model 9946, Manual"
-URL: https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf
+Sebastian Böck and Markus Schedl, “Enhanced Beat Tracking with Context-Aware Neural Networks”, Proceedings of the 14th International Conference on Digital Audio Effects (DAFx), 2011. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.227.9109&rep=rep1&type=pdf>
 
 <a id="2">[2]</a>
-Holzapfel, A.; Davies, M.E.P.; Zapata, J.R.; Oliveira, J.L.; Gouyon, F.; , "Selective Sampling for Beat Tracking Evaluation," Audio, Speech, and Language Processing, IEEE Transactions on , vol.20, no.9, pp.2539-2548, Nov. 2012
-doi: 10.1109/TASL.2012.2205244
-URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6220849&isnumber=6268383
+Florian Krebs, Sebastian Böck and Gerhard Widmer, “An Efficient State Space Model for Joint Tempo and Meter Tracking”, Proceedings of the 16th International Society for Music Information Retrieval Conference (ISMIR), 2015. <https://pdfs.semanticscholar.org/5ee6/fdeb4d195466767c37947d459852173a4fb2.pdf>
 
 <a id="3">[3]</a>
-Böck, Sebastian & Krebs, Florian & Widmer, Gerhard. (2014). A MULTI-MODEL APPROACH TO BEAT TRACKING CONSIDERING HETEROGENEOUS MUSIC STYLES.
+Sebastian Böck, Florian Krebs and Gerhard Widmer, “Accurate Tempo Estimation based on Recurrent Neural Networks and Resonating Comb Filters”, Proceedings of the 16th International Society for Music Information Retrieval Conference (ISMIR), 2015. <http://ismir2015.uma.es/articles/196_Paper.pdf>
 
 <a id="4">[4]</a>
-Colin Raffel, Brian McFee, Eric J. Humphrey, Justin Salamon, Oriol Nieto, Dawen Liang, and Daniel P. W. Ellis, "mir_eval: A Transparent Implementation of Common MIR Metrics", Proceedings of the 15th International Conference on Music Information Retrieval, 2014.
+J. Zapata, M. Davies and E. Gómez, "Multi-feature beat tracker," IEEE/ACM Transactions on Audio, Speech and Language Processing. 22(4), 816-825, 2014. <http://www.cmap.polytechnique.fr/~bacry/MVA/getpapers.php?file=beattracking.pdf&type=pdf>
 
 <a id="5">[5]</a>
-Matthew E. P. Davies,  Norberto Degara, and Mark D. Plumbley. "Evaluation Methods for Musical Audio Beat Tracking Algorithms", Queen Mary University of London Technical Report C4DM-TR-09-06, London, United Kingdom, 8 October 2009.
-
-<a id="1">[1]</a> 
-Stupacher, Jan & Hove, Michael & Janata, Petr. (2016). Audio Features Underlying Perceived Groove and Sensorimotor Synchronization in Music. Music Perception. 33. 571-589. 10.1525/mp.2016.33.5.571. 
-
-<a id="2">[2]</a>
-Burger, Birgitta & Ahokas, J. Riikka & Keipi, Aaro & Toiviainen, Petri. (2013). Relationships between spectral flux, perceived rhythmic strength, and the propensity to move. 
-
-<a id="3">[3]</a>
-Dixon, Simon. (2006). Simple spectrum-based onset detection. 
-
-<a id="4">[4]</a>
-Böck, Sebastian, and Gerhard Widmer. “Maximum filter vibrato suppression for onset detection.” 16th International Conference on Digital Audio Effects, Maynooth, Ireland. 2013.
+N. Degara, E. A. Rua, A. Pena, S. Torres-Guijarro, M. E. Davies, and M. D. Plumbley, "Reliability-informed beat tracking of musical signals," IEEE Transactions on Audio, Speech, and Language Processing, vol. 20, no. 1, pp. 290–301, 2012. <https://www.eecs.qmul.ac.uk/~markp/2012/DegaraArgonesRuaPenaTDP12-taslp_accepted.pdf>
 
 <a id="6">[6]</a>
-Lartillot, Olivier & Eerola, Tuomas & Toiviainen, Petri & Fornari, Jose. (2008). Multi-Feature Modeling of Pulse Clarity: Design, Validation and Optimization. 521-526. 
+Ellis, Daniel PW. “Beat tracking by dynamic programming.” Journal of New Music Research 36.1 (2007): 51-60. <http://labrosa.ee.columbia.edu/projects/beattrack/>
 
 <a id="7">[7]</a>
-Madison, Guy & Gouyon, Fabien & Ullén, Fredrik & Hörnström, Kalle. (2011). Modeling the Tendency for Music to Induce Movement in Humans: First Correlations With Low-Level Audio Descriptors Across Music Genres. Journal of experimental psychology. Human perception and performance. 37. 1578-94. 10.1037/a0024323. 
+Real-Time Beat-Synchronous Analysis of Musical Audio, A. M. Stark, M. E. P. Davies and M. D. Plumbley. In Proceedings of the 12th International Conference on Digital Audio Effects (DAFx-09), Como, Italy, September 1-4, 2009. <https://www.eecs.qmul.ac.uk/~markp/2009/StarkDaviesPlumbley09-dafx.pdf>
 
-<a id="8">[8]</a>
-C. Song, M. Pearce, and C. Harte, SynPy: a Python Toolkit for Syncopation Modelling. Maynooth, Ireland, 2015.
+<a id="8">[8]></a>
+J. R. Zapata, A. Holzapfel, M. E. Davies, J. L. Oliveira, and F. Gouyon, "Assigning a confidence threshold on automatic beat annotation in large datasets," in International Society for Music Information Retrieval Conference (ISMIR’12), 2012. <http://mtg.upf.edu/system/files/publications/Jose_Zapata_et_al_157_ISMIR_2012.pdf>
 
 <a id="9">[9]</a>
-Madison, Guy & Sioros, George. (2014). What musicians do to induce the sensation of groove in simple and complex melodies, and how listeners perceive it. Frontiers in Psychology. 5. 10.3389/fpsyg.2014.00894. 
+Fitzgerald, Derry. (2010). Harmonic/Percussive Separation using Median Filtering. 13th International Conference on Digital Audio Effects (DAFx-10). <http://dafx10.iem.at/papers/DerryFitzGerald_DAFx10_P15.pdf>
 
 <a id="10">[10]</a>
-Sioros, George & Miron, Marius & Davies, Matthew & Gouyon, Fabien & Madison, Guy. (2014). Syncopation creates the sensation of groove in synthesized music examples. Frontiers in psychology. 5. 1036. 10.3389/fpsyg.2014.01036. 
+Driedger, Jonathan & Müller, Meinard & Disch, Sascha. (2014). Extending Harmonic-Percussive Separation of Audio Signals. <https://www.audiolabs-erlangen.de/content/05-fau/assistant/00-driedger/01-publications/2014_DriedgerMuellerDisch_ExtensionsHPSeparation_ISMIR.pdf>
 
 <a id="11">[11]</a>
-Madison G, Gouyon F, Ullen F. Musical groove is correlated with properties of the audio signal as revealed by computational modelling, depending on musical style. In: Proceedings of the SMC 2009—6th Sound and Music Computing Conference. 2009. p. 239–40.
+Gier, H & Paul White, "SPL Transient Designer, DUAL-CHANNEL, Model 9946, Manual". <https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf>
 
 <a id="12">[12]</a>
-Madison G, Gouyon F, Ullén F, Hörnström K. Modeling the tendency for music to induce movement in humans: First correlations with low-level audio descriptors across music genres. J Exp Psychol Hum Percept Perform. 2011; 37:1578–1594. pmid:21728462
+P. Masri and A. Bateman, “Improved modelling of attack transients in music analysis-resynthesis,” in Proceedings of the International Computer Music Conference, 1996, pp. 100–103. <http://hans.fugal.net/comps/papers/masri_1996.pdf>
 
 <a id="13">[13]</a>
-Z. Cao, G. Hidalgo, T. Simon, S. -E. Wei and Y. Sheikh, "OpenPose: Realtime Multi-Person 2D Pose Estimation Using Part Affinity Fields," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 43, no. 1, pp. 172-186, 1 Jan. 2021, doi: 10.1109/TPAMI.2019.2929257.
+J. Laroche, "Efficient Tempo and Beat Tracking in Audio Recordings," JAES, vol. 51, no. 4, pp. 226–233, 2003. <https://www.researchgate.net/publication/200806212_Efficient_Tempo_and_Beat_Tracking_in_Audio_Recordings>
 
 <a id="14">[14]</a>
-Quantifying music-dance synchrony with the application of a deep learning-based 2D pose estimator
-Filip Potempski, Andrea Sabo, Kara K Patterson
-bioRxiv 2020.10.09.333617; doi: https://doi.org/10.1101/2020.10.09.333617 
+Holzapfel, A.; Davies, M.E.P.; Zapata, J.R.; Oliveira, J.L.; Gouyon, F.; , "Selective Sampling for Beat Tracking Evaluation," Audio, Speech, and Language Processing, IEEE Transactions on , vol.20, no.9, pp.2539-2548, Nov. 2012. doi: 10.1109/TASL.2012.2205244. <http://mtg.upf.edu/system/files/publications/HolzapfelEtAl12-taslp.pdf>
+
+<a id="15">[15]</a>
+Colin Raffel, Brian McFee, Eric J. Humphrey, Justin Salamon, Oriol Nieto, Dawen Liang, and Daniel P. W. Ellis, "mir_eval: A Transparent Implementation of Common MIR Metrics", Proceedings of the 15th International Conference on Music Information Retrieval, 2014. <https://dawenl.github.io/publications/Raffel14-mireval.pdf>
+
+<a id="16">[16]</a>
+Matthew E. P. Davies,  Norberto Degara, and Mark D. Plumbley. "Evaluation Methods for Musical Audio Beat Tracking Algorithms", Queen Mary University of London Technical Report C4DM-TR-09-06, London, United Kingdom, 8 October 2009. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.152.6936&rep=rep1&type=pdf>
+
+<a id="17">[17]</a> 
+Stupacher, Jan & Hove, Michael & Janata, Petr. (2016). Audio Features Underlying Perceived Groove and Sensorimotor Synchronization in Music. Music Perception. 33. 571-589. 10.1525/mp.2016.33.5.571. <https://www.researchgate.net/publication/291351443_Audio_Features_Underlying_Perceived_Groove_and_Sensorimotor_Synchronization_in_Music>
+
+<a id="18">[18]</a>
+Madison G, Gouyon F, Ullen F. Musical groove is correlated with properties of the audio signal as revealed by computational modelling, depending on musical style. In: Proceedings of the SMC 2009—6th Sound and Music Computing Conference. 2009. p. 239–40. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.487.1456&rep=rep1&type=pdf>
+
+<a id="19">[19]</a>
+Madison G, Gouyon F, Ullén F, Hörnström K. Modeling the tendency for music to induce movement in humans: First correlations with low-level audio descriptors across music genres. J Exp Psychol Hum Percept Perform. 2011; 37:1578–1594. pmid:21728462. <https://www.researchgate.net/publication/51466595_Modeling_the_Tendency_for_Music_to_Induce_Movement_in_Humans_First_Correlations_With_Low-Level_Audio_Descriptors_Across_Music_Genres>
+
+<a id="20">[20]</a>
+Quantifying music-dance synchrony with the application of a deep learning-based 2D pose estimator. Filip Potempski, Andrea Sabo, Kara K Patterson. bioRxiv 2020.10.09.333617; doi: https://doi.org/10.1101/2020.10.09.333617. <https://www.biorxiv.org/content/10.1101/2020.10.09.333617v1.full>
+
+<a id="21">[21]</a>
+Z. Cao, G. Hidalgo, T. Simon, S. -E. Wei and Y. Sheikh, "OpenPose: Realtime Multi-Person 2D Pose Estimation Using Part Affinity Fields," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 43, no. 1, pp. 172-186, 1 Jan. 2021, doi: 10.1109/TPAMI.2019.2929257. <https://arxiv.org/pdf/1812.08008.pdf>
