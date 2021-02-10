@@ -83,8 +83,7 @@ class OpenposeDetector:
             head_poses = [
                 (d[0], d[1])
                 for i, d in enumerate(detected_poses)
-                if i in self.keypoints
-                and d[2] > OpenposeDetector.confidence_threshold
+                if i in self.keypoints and d[2] > OpenposeDetector.confidence_threshold
             ]
 
             if head_poses:
@@ -111,7 +110,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Track human pose in videos with music alongside groove metrics and beat tracking"
     )
-    parser.add_argument('--custom-keypoints', type=str, help="Override the default face/neck keypoints")
+    parser.add_argument(
+        "--custom-keypoints", type=str, help="Override the default face/neck keypoints"
+    )
     parser.add_argument("mp4_in", type=str, help="mp4 file to process")
     parser.add_argument("mp4_out", type=str, help="mp4 output path")
 

@@ -51,12 +51,12 @@ pool = multiprocessing.Pool(16)
 
 cbts = []
 
-algos = [1,2,3,4,5,6]
+algos = [1, 2, 3, 4, 5, 6]
 algo_combos = []
 
 for i in range(len(algos)):
-    for algo_combo in itertools.combinations(algos, i+1):
-        algo_combos.append(','.join([str(x) for x in algo_combo]))
+    for algo_combo in itertools.combinations(algos, i + 1):
+        algo_combos.append(",".join([str(x) for x in algo_combo]))
 
 for ag in algo_combos:
     cbts.append(ConsensusBeatTracker(pool, algorithms=ag))
@@ -68,13 +68,15 @@ def eval_beats(signal, ground_truth):
 
     beat_times_1 = proc_beat(act_beat)
 
-    n_algos = len(cbts)+1
+    n_algos = len(cbts) + 1
 
     ret = numpy.zeros(dtype=numpy.float32, shape=(n_algos, 6))
 
     gt_trimmed = mir_eval_beat.trim_beats(ground_truth)
 
-    beat_times = [mir_eval_beat.trim_beats(beat_times_1)] + [mir_eval_beat.trim_beats(cbt.beats(signal)) for cbt in cbts]
+    beat_times = [mir_eval_beat.trim_beats(beat_times_1)] + [
+        mir_eval_beat.trim_beats(cbt.beats(signal)) for cbt in cbts
+    ]
 
     for i, beats in enumerate(beat_times):
         ret[i][0] = mir_eval_beat.f_measure(gt_trimmed, beats)
@@ -122,7 +124,9 @@ def main():
                     prefix = "_".join(f.split(".")[0].split("_")[:2])
                     wav_gt[prefix]["groundtruth"] = os.path.join(dir_name, f)
 
-    total_results = numpy.zeros(dtype=numpy.float, shape=(len(wav_gt), len(cbts)+1, 6))
+    total_results = numpy.zeros(
+        dtype=numpy.float, shape=(len(wav_gt), len(cbts) + 1, 6)
+    )
 
     seq = 0
     for item, wav_gt_pair in tqdm(wav_gt.items()):
@@ -146,7 +150,7 @@ def main():
     ]
     algos = ["SB1"]
     for i, cbt in enumerate(cbts):
-        algos.append("consensus"+cbt.algorithms)
+        algos.append("consensus" + cbt.algorithms)
 
     table = []
 
