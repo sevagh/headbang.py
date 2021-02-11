@@ -251,7 +251,7 @@ The 4 measures that will be evaluated (F-measure, Cemgil, Goto, and McKinney P-S
 
 An additional 2 measures were added by splitting the F-measure into its constituent precision and recall (simply by copy-pasting the mir_eval f_measure function and returning the individual measures). This should help with a more fine-grained analysis of results. My hypothesis is that the precision of `ConsensusBeatTracker` could be higher at the expense of recall. In other words, it makes less beat predictions, due to the constraining nature of consensus, but the ones it does make should be very accurate.
 
-The mir_beat_eval.py script (in the base directory of the repository) loads the SMC dataset (which you can [download here](http://smc.inesctec.pt/research/data-2/)). The SMC dataset contains wav files and ground-truth annotations. The script evaluates the results of the madmom DBNBeatTracker and every possible combination of `ConsensusBeatTracker` out of the 6 individual beat tracking algorithms:
+The mir_beat_eval.py script (in the `tests/` directory of the repository) loads the SMC dataset (which you can [download here](http://smc.inesctec.pt/research/data-2/)). The SMC dataset contains wav files and ground-truth annotations. The script evaluates the results of the madmom DBNBeatTracker and every possible combination of `ConsensusBeatTracker` out of the 6 individual beat tracking algorithms:
 
 ```python
 >>> algos = [1, 2, 3, 4, 5, 6]
@@ -274,7 +274,7 @@ For brevity, the results for all combinations are omitted (but available in the 
 
 | algorithm           |   F-measure |    Cemgil |      Goto  |   McKinney P-score |   Precision |    Recall |
 |---------------------|-------------|-----------|------------|--------------------|-------------|-----------|
-| SB1                 |   0.55288   |  0.436283 |   0.225806 |           0.649583 |   0.537928  |  0.602492 |
+| SB1                 |   0.547121  |  0.436283 |   0.225806 |           0.649256 |   0.532478  |  0.596155 |
 | consensus1,2,5      |   0.537942  |  0.42607  |   0.24424  |           0.6466   |   0.526321  |  0.582903 |
 | consensus1,2,4,5,6  |   0.534229  |  0.422364 |   **0.248848** |           0.646149 |   0.520878  |  0.582347 |
 | consensus1,2,3,6    |   0.532419  |  0.422973 |   **0.248848** |           0.637248 |   0.516854  |  0.585059 |

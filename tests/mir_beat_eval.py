@@ -54,10 +54,9 @@ cbts = []
 algos = [1, 2, 3, 4, 5, 6]
 algo_combos = []
 
-#for i in range(len(algos)):
-#    for algo_combo in itertools.combinations(algos, i + 1):
-#        algo_combos.append(",".join([str(x) for x in algo_combo]))
-algo_combos = ["1"]
+for i in range(len(algos)):
+    for algo_combo in itertools.combinations(algos, i + 1):
+        algo_combos.append(",".join([str(x) for x in algo_combo]))
 
 for ag in algo_combos:
     cbts.append(ConsensusBeatTracker(pool, algorithms=ag))
@@ -78,6 +77,9 @@ def eval_beats(signal, ground_truth):
     beat_times = [mir_eval_beat.trim_beats(beat_times_1)] + [
         mir_eval_beat.trim_beats(cbt.beats(signal)) for cbt in cbts
     ]
+
+    # necessary to match the requirement of TempoTapMaxAgreement
+    beat_times = [b.astype(numpy.single) for b in beat_times]
 
     for i, beats in enumerate(beat_times):
         ret[i][0] = mir_eval_beat.f_measure(gt_trimmed, beats)
