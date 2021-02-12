@@ -16,7 +16,7 @@ from headbang.params import DEFAULTS
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="headbang.py",
+        prog="beat_track",
         description="Accurate percussive beat tracking for metal songs",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -70,6 +70,11 @@ def main():
         "--disable-onsets",
         action="store_true",
         help="disable onset alignment, only output consensus beats",
+    )
+    parser.add_argument(
+        "--disable-transient-shaper",
+        action="store_true",
+        help="disable transient shaping, only use percussive separation",
     )
     parser.add_argument(
         "--beats-out", type=str, default="", help="output beats txt file"
@@ -161,6 +166,7 @@ def main():
         args.release_ms,
         args.power_memory_ms,
         args.filter_order,
+        args.disable_transient_shaper,
     )
 
     beats = None

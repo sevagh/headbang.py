@@ -57,6 +57,7 @@ class HeadbangBeatTracker:
         release_ms=DEFAULTS["release_ms"],
         power_memory_ms=DEFAULTS["power_memory_ms"],
         filter_order=DEFAULTS["filter_order"],
+        disable_transient=False,
     ):
         self.onset_align_threshold_s = onset_align_threshold_s
         self.max_no_beats = max_no_beats
@@ -71,6 +72,7 @@ class HeadbangBeatTracker:
         self.cbt.print_params()
         self.onset_detector = OnsetDetector(onset_silence_threshold)
         self.disable_onsets = disable_onsets
+        self.disable_transient = disable_transient
 
         self.harmonic_margin = harmonic_margin
         self.harmonic_frame = harmonic_frame
@@ -108,6 +110,7 @@ class HeadbangBeatTracker:
             self.release_ms,
             self.power_memory_ms,
             self.filter_order,
+            self.disable_transient,
         )
 
         print("Detecting percussive onsets with methods {0}".format(ODF))

@@ -169,6 +169,7 @@ def ihpss(
     release_ms=DEFAULTS["release_ms"],
     power_memory_ms=DEFAULTS["power_memory_ms"],
     filter_order=DEFAULTS["filter_order"],
+    disable_transient=False,
 ):
     print(
         "Iteration 1 of hpss: frame = {0}, margin = {1}".format(
@@ -205,24 +206,27 @@ def ihpss(
 
     yp = fix_length(istft(S_p2, dtype=x.dtype), len(x))
 
-    print(
-        "Applying multiband transient shaper:\n\tfast attack (ms) = {0},\n\tslow attack (ms) = {1},\n\trelease (ms) = {2},\n\tpower memory (ms) = {3},\n\tfilter order = {4}".format(
+    yp_tshaped = yp
+
+    if not disable_transient:
+        print(
+            "Applying multiband transient shaper:\n\tfast attack (ms) = {0},\n\tslow attack (ms) = {1},\n\trelease (ms) = {2},\n\tpower memory (ms) = {3},\n\tfilter order = {4}".format(
+                fast_attack_ms,
+                slow_attack_ms,
+                release_ms,
+                power_memory_ms,
+                filter_order,
+            )
+        )
+        yp_tshaped = _multiband_transient_shaper(
+            yp_tshaped,
+            44100,
+            pool,
             fast_attack_ms,
             slow_attack_ms,
             release_ms,
             power_memory_ms,
             filter_order,
         )
-    )
-    yp_tshaped = _multiband_transient_shaper(
-        yp,
-        44100,
-        pool,
-        fast_attack_ms,
-        slow_attack_ms,
-        release_ms,
-        power_memory_ms,
-        filter_order,
-    )
 
     return yp_tshaped, yp
