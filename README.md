@@ -6,6 +6,10 @@ See more at https://sevagh.github.io/headbang.py
 
 ## headbang
 
+### Algorithm
+
+![headbang_block_diagram](./docs/hbt_block_diagram.png)
+
 ### Installation
 
 headbang has been written and verified with Python 3.8 on AMD64 machines running Fedora 32 Linux. However, there shouldn't be any problems running it on different machines if the requirements can be successfully installed.
@@ -145,6 +149,10 @@ Headbang is:
 ## headbang-hud
 
 headbang-hud is a combined MIR beat tracking (using the `headbang` beat tracking code) and 2D pose estimation project for tracking headbanging motion.
+
+### Architecture
+
+![hud_code_arch](./docs/hud_code_arch.png)
 
 ### Installation
 
