@@ -95,7 +95,7 @@ The HeadbangBeatTracker first gathers beats using the ConsensusBeatTracker, and 
 
 ![percussive_hpss](percussive_hpss.png)
 
-The algorithm used is one based on median filtering the spectrogram, originally described in [[9]](#9), and further improved with iterative algorithm in [[10]](#10). I use the [librosa implementation](https://librosa.org/doc/0.8.0/generated/librosa.decompose.hpss.html), which has a good visualization of the effect.
+The algorithm used is one based on median filtering the spectrogram, originally described in [[9]](#9), and further improved with an iterative algorithm in [[10]](#10). I use the [librosa implementation](https://librosa.org/doc/0.8.0/generated/librosa.decompose.hpss.html), which has a good visualization of the effect.
 
 The parameters of the HPSS can be modified (but I don't find it changes the results significantly):
 * `harmonic_frame=16384` (a larger frame size in the first iteration gives us higher frequency resolution which helps separate pitched, harmonic components)
@@ -196,11 +196,6 @@ Here's a table of some interesting outputs of headbang's algorithms:
       <td><a href="https://www.youtube.com/watch?v=VaE62m_a8oQ">Volumes - The Mixture</a></td>
       <td>{% include embed-audio.html src="themixture_dbn.wav" %}</td>
       <td>{% include embed-audio.html src="themixture_hbt.wav" %}</td>
-    </tr>
-    <tr>
-      <td><a href="https://www.youtube.com/watch?v=Pru_5HW9Ofg">Vitalism - Luxata</a></td>
-      <td>{% include embed-audio.html src="luxata_dbn.wav" %}</td>
-      <td>{% include embed-audio.html src="luxata_hbt.wav" %}</td>
     </tr>
     <tr>
       <td><a href="https://www.youtube.com/watch?v=8niG0ta4jZs">Anup Sastry - Origin</a></td>
@@ -394,11 +389,6 @@ for bpm in bpms:
 
 Note the off-beat head bops at first, which transition to being on-beat.
 
-[Keith Ape - It G Ma](https://www.youtube.com/watch?v=Ls9QJEE0Drw):
-{% include embed-video.html src="it_g_ma_short.mp4" %}
-
-Although all the talk is about metal so far, it works well on the above rap song.
-
 Here's a clip from drummer [Anup Sastry - Titan](https://www.youtube.com/watch?v=Y82rls0yoAM), where the motion is tracked on the left and right arms (instead of the head and neck):
 {% include embed-video.html src="anupsastry_short.mp4" %}
 
@@ -408,10 +398,10 @@ Here's a clip from drummer [Anup Sastry - Titan](https://www.youtube.com/watch?v
 
 Note the two-step process:
 1. First, the video is stepped through frame by frame to apply OpenPose pose detection
-2. The resultant frames (with drawn keypoints) are written to a tmp mp4 file
+2. The resultant frames (with drawn keypoints) are written to a temporary mp4 file
 3. y coordinates are accumulated per-frame to track motion throughout the video and pick peaks
 4. Beats are computed from the audio 
-5. The tmp mp4 file is loaded frame by frame, bop/beat/tempo values are drawn on the respective frames, and the result is written to the final output file
+5. The temporary mp4 file is loaded frame by frame, bop/beat/tempo values are drawn on the respective frames, and the result is written to the final output file
 
 The two-pass design was chosen out of necessity; keeping all of the frames of the video in-memory while performing all of the processing was leading to huge memory usage (32+GB) for long videos.
 

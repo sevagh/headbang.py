@@ -104,12 +104,24 @@ def bpm_from_beats(beats):
     return 60 / beat_step
 
 
+def bops_realistic_smoothing(bops, min_spacing):
+    return bops[numpy.where(numpy.diff(bops) > min_spacing)[0]]
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Track human pose in videos with music alongside groove metrics and beat tracking"
     )
     parser.add_argument(
-        "--custom-keypoints", type=str, help="Override the default face/neck keypoints"
+        "--custom-keypoints",
+        type=str,
+        help="Override the default face/neck keypoints (default=%(default)s)",
+    )
+    parser.add_argument(
+        "--minimum-bop-spacing",
+        type=float,
+        default=0.2,
+        help="Minimum spacing (in seconds) between bops to filter out implausible events (default=%(default)s)",
     )
     parser.add_argument("mp4_in", type=str, help="mp4 file to process")
     parser.add_argument("mp4_out", type=str, help="mp4 output path")
@@ -225,7 +237,7 @@ def main():
 
     print("Marking beat and head bop positions on output frames")
 
-    frame_history = 3  # consider this many seconds of history for bpm computation
+    frame_history = 5  # consider this many seconds of history for bpm computation
 
     all_beats_bpm = 0
     strong_beats_bpm = 0
@@ -255,9 +267,12 @@ def main():
             )
         ]
 
+        # keep a running history of bops
         bop_history = bop_locations[
             numpy.where((bop_locations >= frame_min) & (bop_locations <= frame_max))
         ]
+
+        bop_history = bops_realistic_smoothing(bop_history, args.minimum_bop_spacing)
 
         all_beats_bpm_tmp = bpm_from_beats(all_beat_history)
         bop_bpm_tmp = bpm_from_beats(bop_history)

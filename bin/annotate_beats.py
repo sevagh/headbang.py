@@ -8,7 +8,7 @@ from madmom.io.audio import write_wave_file
 import librosa
 import sys
 import argparse
-from headbang.util import load_wav
+from headbang.util import load_wav, overlay_clicks
 
 
 class Player:
@@ -111,15 +111,9 @@ def main():
 
     player.terminate_processing()
 
-    x = load_wav(args.wav_in, stereo=True)
-
     print("annotated beat locations: {0}".format(beats))
-    beat_clicks = librosa.clicks(beats, sr=44100, length=len(x))
-
-    if x.shape[0] == 1:
-        beat_clicks = numpy.column_stack((beat_clicks, beat_clicks))
-
-    beat_waveform = (x + beat_clicks).astype(numpy.single)
+    x = load_wav(args.wav_in, stereo=True)
+    beat_waveform = overlay_clicks(x, beats)
 
     print("Writing outputs with clicks to {0}".format(args.beat_wav_out))
     write_wave_file(beat_waveform, args.beat_wav_out, sample_rate=44100)

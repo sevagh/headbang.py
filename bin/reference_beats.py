@@ -6,7 +6,7 @@ import json
 import numpy
 import librosa
 from madmom.io.audio import load_audio_file, write_wave_file
-from headbang.util import load_wav
+from headbang.util import load_wav, overlay_clicks
 from headbang.beattrack import apply_single_beat_tracker, algo_names
 import madmom
 
@@ -19,10 +19,16 @@ def main():
     )
 
     parser.add_argument(
-        "--algorithm", type=int, default=1, help="which single algorithm to use"
+        "--algorithm",
+        type=int,
+        default=1,
+        help="which single algorithm to use (default=%(default)s)",
     )
     parser.add_argument(
-        "--filter-order", type=int, default=2, help="butter filter order"
+        "--filter-order",
+        type=int,
+        default=2,
+        help="butter filter order (default=%(default)s)",
     )
     parser.add_argument("wav_in", help="input wav file")
     parser.add_argument("beat_wav_out", help="output beat wav file")
@@ -36,10 +42,7 @@ def main():
     beat_times = apply_single_beat_tracker(x, args.algorithm)
 
     print("Overlaying clicks at beat locations")
-
-    beat_clicks = librosa.clicks(beat_times, sr=44100, length=len(x))
-
-    beat_waveform = (x + beat_clicks).astype(numpy.single)
+    beat_waveform = overlay_clicks(x, beat_times)
 
     print("Writing outputs with clicks to {0}".format(args.beat_wav_out))
     write_wave_file(beat_waveform, args.beat_wav_out, sample_rate=44100)

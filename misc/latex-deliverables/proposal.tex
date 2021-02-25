@@ -1,5 +1,5 @@
 \documentclass[letter,12pt]{report}
-\setlength{\parindent}{0pt}
+%\setlength{\parindent}{0pt}
 \usepackage[left=2cm, right=2cm, top=2cm, bottom=2cm]{geometry}
 \usepackage[shortlabels]{enumitem}
 \usepackage{graphicx}
@@ -24,12 +24,7 @@
 \renewcommand{\topfraction}{0.85}
 \renewcommand{\textfraction}{0.1}
 \renewcommand{\floatpagefraction}{0.75}
-\usepackage[
-    %backend=biber, 
-    natbib=true,
-    style=numeric,
-    sorting=none
-]{biblatex}
+\usepackage[backend=biber,authordate]{biblatex-chicago}
 \addbibresource{citations.bib}
 \usepackage{titlesec}
  
@@ -38,31 +33,23 @@
 
 \begin{document}
 
-\Large{\textbf{headbang.py}}\\
-\large{Final Project Proposal. MUMT 621, April 06, 2021}\\
+\noindent\Large{\textbf{headbang.py}}\\
+\large{Final project proposal. MUMT 621, April 06, 2021}\\
 \large{Sevag Hanssian, 260398537}
 
-\hrulefill
+\noindent\hrulefill
 
 \vspace{2em}
 
-Beat tracking is a rich field of music information retrieval (MIR). The audio beat tracking task has been a part of MIREX since 2006 \cite{mirex06}, and receives submissions every year. Most recently, state of the art results have been achieved by \cite{bock1} and \cite{bock2}, who have also released their algorithms in the madmom Python library \cite{madmom}.
+Beat tracking is a rich field of music information retrieval (MIR). The audio beat tracking task has been a part of MIREX since 2006 (\cite{mirex06}), and receives submissions every year. Most recently, \textcite{bock1, bock2} have achieved state of the art results, and have released their algorithms in the open-source madmom Python library (\cite{madmom}).
 
-\vspace{1em}
+The beat tracking algorithms in MIREX are evaluated against diverse and challenging beat tracking datasets (\cite{beatmeta}). However, in my personal experiments on my preferred genres of music (mostly rhythmically-complex progressive metal, e.g., \cite{meshuggah, periphery}), I noticed that in several cases the beat locations output by the best algorithms were not correct.
 
-\qquad The beat tracking algorithms in MIREX are evaluated against diverse and challenging beat tracking datasets (\cite{beatmeta}). However, in my personal experiments on my preferred genres of music (mostly rhythmically-complex progressive metal, e.g., \cite{meshuggah}, \cite{periphery}), I noticed that in several cases the beat locations output by the best algorithms were not correct.
+For the first goal of my final project, I propose to explore various beat tracking algorithms and pre-processing techniques to demonstrate improved beat results in progressive metal songs. The name of the project is ``headbang.py''; the ``.py'' suffix is because it will be a code project written in Python, and ``headbang'' refers to the act of headbanging, where metal musicians or fans violently move their head up and down to the beat of a metal song.
 
-\vspace{1em}
+There are recent papers which combine MIR tasks with 2D pose estimation to associate human dance motion with musical beats (\cite{pose1}, \cite{pose2}). For the second goal of headbang.py, I propose to analyze headbanging motion in metal videos with the OpenPose 2D human pose estimation library. The results of the headbanging motion analysis can be displayed alongside the results of beat tracking, to potentially reveal some information about what drives the urge to headbang.
 
-\qquad For the first goal of my final project, I propose to explore various beat tracking algorithms and pre-processing techniques to demonstrate improved beat results in progressive metal songs. The name of the project is ``headbang.py''; the ``.py'' suffix is because it will be a code project written in Python, and ``headbang'' refers to the act of headbanging, where metal musicians or fans violently move their head up and down to the beat of a metal song.
-
-\vspace{1em}
-
-\qquad There are recent papers which combine MIR tasks with 2D pose estimation to associate human dance motion with musical beats (\cite{pose1}, \cite{pose2}). For the second goal of headbang.py, I propose to analyze headbanging motion in metal videos with the OpenPose 2D human pose estimation library. The results of the headbanging motion analysis can be displayed alongside the results of beat tracking, to potentially reveal some information about what drives the urge to headbang.
-
-\vspace{1em}
-
-\qquad One method for evaluating beat tracking results is overlaying clicks, or ``sonification'' of the beat annotations (\cite{clicks}), on the original track. This helps a person to verify that the clicks line up with their own perception of beat locations in listening tests. For an optional third goal of headbang.py (if time permits), I want to create a digital animation of a humanoid figure (2D or 3D) which headbangs on beat locations, as an alternative method of visualizing the outputs of beat trackers.
+One method for evaluating beat tracking results is overlaying clicks on predicted beats over the original track, to sonify the beat annotations (\cite{clicks}). This helps a person to verify that the clicks line up with their own perception of beat locations in listening tests. For an optional third goal of headbang.py (if time permits), I want to create a digital animation of a humanoid figure (2D or 3D) which headbangs on beat locations, as an alternative method of visualizing the outputs of beat trackers.
 
 \vfill
 \clearpage

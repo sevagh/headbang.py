@@ -1,5 +1,6 @@
 from madmom.io.audio import load_audio_file
 import numpy
+import librosa
 
 
 def load_wav(wav_in, stereo=False):
@@ -17,3 +18,12 @@ def load_wav(wav_in, stereo=False):
     x /= numpy.max(numpy.abs(x))
 
     return x
+
+
+def overlay_clicks(x, beats):
+    clicks = librosa.clicks(beats, sr=44100, length=len(x))
+
+    if len(x.shape) > 1 and x.shape[1] == 2:
+        clicks = numpy.column_stack((clicks, clicks))  # convert to stereo
+
+    return (x + clicks).astype(numpy.single)
