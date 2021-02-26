@@ -1,6 +1,5 @@
 import numpy
 import sys
-import itertools
 import os
 import scipy
 from scipy.signal import find_peaks, find_peaks_cwt, peak_prominences
@@ -14,14 +13,13 @@ sys.path.append(openpose_dir + "/build/python/openpose")
 
 import pyopenpose as op
 
-marker = itertools.cycle((",", "+", ".", "o", "*"))
-
 
 class OpenposeDetector:
-    # nose, neck, right eye, left eye, right ear, left ear
-    face_neck_keypoints = [0, 1, 15, 16, 17, 18]
+    # nose, right eye, left eye, right ear, left ear
+    face_neck_keypoints = [0, 15, 16, 17, 18]
     confidence_threshold = 0.5
-    peak_prominence = 0.2
+    peak_prominence = 0.05
+    obj_limit = 2
 
     def __init__(self, n_frames, custom_keypoints=None):
         config = {}
@@ -100,26 +98,30 @@ class OpenposeDetector:
 
     def find_peaks(self):
         peaks = [
-            find_peaks(
-                numpy.nan_to_num(y_coords), prominence=OpenposeDetector.peak_prominence
-            )
+            find_peaks(y_coords, prominence=OpenposeDetector.peak_prominence)
             for y_coords in self.all_y_coords
         ]
         peaks = [p[0] for p in peaks]
 
         prominences = [
-            peak_prominences(numpy.nan_to_num(y_coords), peaks[i])
+            peak_prominences(y_coords, peaks[i])
             for i, y_coords in enumerate(self.all_y_coords)
         ]
         prominences = [p[1] for p in prominences]
 
-        strongest_peaks_index = prominences.index(max(prominences, key=sum))
+        top_ycoords_and_peaks = [
+            (ycrds, pks)
+            for _, pks, ycrds in sorted(
+                zip(prominences, peaks, self.all_y_coords),
+                key=lambda triplet: sum(triplet[0]),
+                reverse=True,
+            )
+        ]
 
-        return peaks, strongest_peaks_index
+        # only track up to obj_limit objects
+        return top_ycoords_and_peaks[: OpenposeDetector.obj_limit]
 
     def plot_ycoords(self):
-        peaks, strongest_peaks_index = self.find_peaks()
-
         plt.figure(1)
         plt.title("normalized y coordinate motion")
 
@@ -127,29 +129,21 @@ class OpenposeDetector:
         plt.ylabel("y coord")
 
         frames = numpy.arange(self.n_frames)
+        best_coords_and_peaks = self.find_peaks()
 
-        for i, y_coords in enumerate(self.all_y_coords):
+        for i, coordspeaks in enumerate(best_coords_and_peaks):
+            y_coords, peaks = coordspeaks
             y_coords = numpy.asarray(y_coords)
-            plt.plot(frames, y_coords, label="obj {0}".format(i))
+            plt.plot(
+                frames,
+                y_coords,
+                "-D",
+                label="obj {0}".format(i),
+                markevery=peaks,
+                mec="black",
+                mfc="black",
+            )
 
-            if i == strongest_peaks_index:
-                # mark the strongest peaks in a thicker manner
-                plt.plot(
-                    peaks[i],
-                    y_coords[peaks[i]],
-                    marker=next(marker),
-                    linestyle="None",
-                    markersize=8,
-                    color="black",
-                )
-            else:
-                plt.plot(
-                    peaks[i],
-                    y_coords[peaks[i]],
-                    marker=next(marker),
-                    linestyle="None",
-                    markersize=5,
-                )
         plt.legend()
         plt.show()
 

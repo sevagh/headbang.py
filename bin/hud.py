@@ -29,12 +29,6 @@ def main():
         help="Override the default face/neck keypoints (default=%(default)s)",
     )
     parser.add_argument(
-        "--minimum-bop-spacing",
-        type=float,
-        default=0.2,
-        help="Minimum spacing (in seconds) between bops to filter out implausible events (default=%(default)s)",
-    )
-    parser.add_argument(
         "--bpm-frame-history",
         type=float,
         default=3.0,
@@ -152,8 +146,9 @@ def main():
     # get head bop locations by indexing into time array
     all_time = numpy.linspace(0, frame_duration * total_frames, int(total_frames))
 
-    peaks, strongest_peaks_index = pose_tracker.find_peaks()
-    bop_locations = all_time[peaks[strongest_peaks_index]]
+    # take top peaks only
+    peaks = pose_tracker.find_peaks()[0][1]
+    bop_locations = all_time[peaks]
 
     event_thresh = args.event_threshold_frames * frame_duration
 
@@ -191,7 +186,6 @@ def main():
         bop_history = bop_locations[
             numpy.where((bop_locations >= frame_min) & (bop_locations <= frame_max))
         ]
-        bop_history = bops_realistic_smoothing(bop_history, args.minimum_bop_spacing)
 
         all_beats_bpm_tmp = bpm_from_beats(all_beat_history)
         bop_bpm_tmp = bpm_from_beats(bop_history)
