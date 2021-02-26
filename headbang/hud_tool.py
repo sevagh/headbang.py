@@ -173,8 +173,12 @@ def main():
     print("run a gc, just in case...")
     gc.collect()
 
+    all_beats_bpm = 0
+    bop_bpm = 0
+
     # define a function to filter the first video to add more stuff
     def process_second_pass(get_frame_fn, frame_time):
+        nonlocal all_beats_bpm, bop_bpm
         frame = get_frame_fn(frame_time)
 
         frame_max = frame_time
@@ -198,8 +202,14 @@ def main():
             numpy.where((bop_locations >= frame_min) & (bop_locations <= frame_max))
         ]
 
-        all_beats_bpm = bpm_from_beats(all_beat_history)
-        bop_bpm = bpm_from_beats(bop_history)
+        all_beats_bpm_tmp = bpm_from_beats(all_beat_history)
+        bop_bpm_tmp = bpm_from_beats(bop_history)
+
+        if not numpy.isnan(all_beats_bpm_tmp):
+            all_beats_bpm = all_beats_bpm_tmp
+
+        if not numpy.isnan(bop_bpm_tmp):
+            bop_bpm = bop_bpm_tmp
 
         is_strong_beat = False
         is_beat = False

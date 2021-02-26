@@ -13,7 +13,7 @@ DEFAULTS = {
     "release_ms": 20,
     "power_memory_ms": 1,
     "filter_order": 3,
-    "bpm_frame_history": 2.0,
+    "bpm_frame_history": 2.5,
     "pose_keypoints": "0,15,16,17,18",
     "event_thresh_frames": 2,
 }

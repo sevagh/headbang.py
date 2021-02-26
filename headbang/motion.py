@@ -109,8 +109,6 @@ class OpenposeDetector:
             markevery=peaks,
             mec="black",
         )
-
-        plt.legend()
         plt.show()
 
 
