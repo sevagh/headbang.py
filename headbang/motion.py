@@ -2,9 +2,10 @@ import numpy
 import sys
 import os
 import scipy
-from scipy.signal import find_peaks, find_peaks_cwt, peak_prominences
+from scipy.signal import find_peaks, peak_prominences
 import matplotlib.pyplot as plt
 from defaultlist import defaultlist
+from headbang.params import DEFAULTS
 
 openpose_install_path = "/home/sevagh/thirdparty-repos/openpose"
 
@@ -15,13 +16,17 @@ import pyopenpose as op
 
 
 class OpenposeDetector:
-    # nose, right eye, left eye, right ear, left ear
-    face_neck_keypoints = [0, 15, 16, 17, 18]
-    confidence_threshold = 0.5
-    peak_prominence = 0.05
-    obj_limit = 2
+    undef_coord_default = numpy.nan
 
-    def __init__(self, n_frames, custom_keypoints=None):
+    def __init__(
+        self,
+        n_frames,
+        keypoints=DEFAULTS["pose_keypoints"],
+        obj_limit=DEFAULTS["detected_object_limit"],
+        adaptive_prominence_ratio=DEFAULTS["adaptive_prominence_ratio"],
+        openpose_confidence_threshold=DEFAULTS["openpose_confidence_thresh"],
+        peak_width=DEFAULTS["peak_width"],
+    ):
         config = {}
         # config["dir"] = openpose_install_path
         config["logging_level"] = 3
@@ -43,15 +48,16 @@ class OpenposeDetector:
         self.opWrapper.configure(config)
         self.opWrapper.start()
 
-        if custom_keypoints:
-            keypoints = [int(i) for i in custom_keypoints.split(",")]
-            self.keypoints = keypoints
-        else:
-            self.keypoints = OpenposeDetector.face_neck_keypoints
+        self.keypoints = [int(i) for i in keypoints.split(",")]
 
         self.n_frames = int(n_frames)
-        self.all_y_coords = [[numpy.nan] * self.n_frames]
+        self.all_y_coords = [[OpenposeDetector.undef_coord_default] * self.n_frames]
         self.frame_idx = 0
+        self.obj_limit = obj_limit
+
+        self.confidence_threshold = openpose_confidence_threshold
+        self.adaptive_prominence_ratio = adaptive_prominence_ratio
+        self.peak_width = peak_width
 
     def detect_pose(self, image):
         datum = op.Datum()
@@ -74,8 +80,7 @@ class OpenposeDetector:
                 [
                     (d[0], d[1])
                     for i, d in enumerate(single_detected_poses)
-                    if i in self.keypoints
-                    and d[2] > OpenposeDetector.confidence_threshold
+                    if i in self.keypoints and d[2] > self.confidence_threshold
                 ]
                 for single_detected_poses in multiple_detected_poses
             ]
@@ -90,36 +95,49 @@ class OpenposeDetector:
                         try:
                             self.all_y_coords[i][self.frame_idx] = y_norm
                         except IndexError:
-                            self.all_y_coords.append([numpy.nan] * self.n_frames)
+                            self.all_y_coords.append(
+                                [OpenposeDetector.undef_coord_default] * self.n_frames
+                            )
                             self.all_y_coords[i][self.frame_idx] = y_norm
 
         self.frame_idx += 1
         return outframe
 
     def find_peaks(self):
-        peaks = [
-            find_peaks(y_coords, prominence=OpenposeDetector.peak_prominence)
-            for y_coords in self.all_y_coords
-        ]
-        peaks = [p[0] for p in peaks]
+        peaks = [None] * len(self.all_y_coords)
+        prominences = [None] * len(self.all_y_coords)
+        adjusted_y_coords = [None] * len(self.all_y_coords)
 
-        prominences = [
-            peak_prominences(y_coords, peaks[i])
-            for i, y_coords in enumerate(self.all_y_coords)
-        ]
-        prominences = [p[1] for p in prominences]
+        for i, y_coords in enumerate(self.all_y_coords):
+            min_coord = numpy.nanmin(y_coords)
+            max_coord = numpy.nanmax(y_coords)
+
+            # adaptive peak prominence - X% of max displacement
+            adaptive_prominence = self.adaptive_prominence_ratio * (
+                max_coord - min_coord
+            )
+
+            adjusted_y_coords[i] = numpy.nan_to_num(y_coords, nan=min_coord)
+
+            peaks[i], _ = find_peaks(
+                adjusted_y_coords[i],
+                prominence=adaptive_prominence,
+                wlen=self.peak_width,
+            )
+
+            prominences[i], _, _ = peak_prominences(adjusted_y_coords[i], peaks[i])
 
         top_ycoords_and_peaks = [
             (ycrds, pks)
             for _, pks, ycrds in sorted(
-                zip(prominences, peaks, self.all_y_coords),
+                zip(prominences, peaks, adjusted_y_coords),
                 key=lambda triplet: sum(triplet[0]),
                 reverse=True,
             )
         ]
 
         # only track up to obj_limit objects
-        return top_ycoords_and_peaks[: OpenposeDetector.obj_limit]
+        return top_ycoords_and_peaks[: self.obj_limit]
 
     def plot_ycoords(self):
         plt.figure(1)
@@ -157,7 +175,3 @@ def bpm_from_beats(beats):
     beat_step = m_res.slope
 
     return 60 / beat_step
-
-
-def bops_realistic_smoothing(bops, min_spacing):
-    return bops[numpy.where(numpy.diff(bops) > min_spacing)[0]]

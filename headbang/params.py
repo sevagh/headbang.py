@@ -13,4 +13,11 @@ DEFAULTS = {
     "release_ms": 20,
     "power_memory_ms": 1,
     "filter_order": 3,
+    "bpm_frame_history": 3.0,
+    "pose_keypoints": "0,15,16,17,18",
+    "event_thresh_frames": 2,
+    "detected_object_limit": 1,
+    "adaptive_prominence_ratio": 0.5,
+    "openpose_confidence_thresh": 0.5,
+    "peak_width": 3,
 }

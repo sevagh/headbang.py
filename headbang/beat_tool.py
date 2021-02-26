@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import matplotlib.pyplot as plt
 import argparse
 import multiprocessing
@@ -16,7 +14,7 @@ from headbang.params import DEFAULTS
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="beat_track",
+        prog="headbang-beat-tool",
         description="Accurate percussive beat tracking for metal songs",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -329,7 +327,3 @@ def generate_all_plots(
     plt.xlabel("time (seconds)")
     plt.ylabel("amplitude")
     plt.show()
-
-
-if __name__ == "__main__":
-    main()

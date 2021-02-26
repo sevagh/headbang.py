@@ -22,11 +22,6 @@ with open("./requirements.txt") as f:
     for l in f:
         REQUIRED.append(l[:-1])
 
-TEST_REQUIRED = []
-with open("./requirements-test.txt") as f:
-    for l in f:
-        TEST_REQUIRED.append(l[:-1])
-
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -59,8 +54,13 @@ setup(
     url=URL,
     packages=find_packages(exclude=('tests',)),
     py_modules=['headbang'],
+    entry_points={
+        'console_scripts': [
+            'headbang-beats=headbang.beat_tool:main',
+            'headbang-hud=headbang.hud_tool:main',
+        ],
+    },
     install_requires=REQUIRED,
-    tests_require=REQUIRED+TEST_REQUIRED,
     include_package_data=True,
     license='MIT',
     classifiers=[

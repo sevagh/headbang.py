@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import numpy
 import time
 import cv2
@@ -14,7 +12,8 @@ import multiprocessing
 from moviepy.editor import *
 from moviepy.audio.AudioClip import AudioArrayClip
 from tempfile import gettempdir
-from headbang.motion import OpenposeDetector, bpm_from_beats, bops_realistic_smoothing
+from headbang.motion import OpenposeDetector, bpm_from_beats
+from headbang.params import DEFAULTS
 
 from headbang import HeadbangBeatTracker
 
@@ -24,21 +23,46 @@ def main():
         description="Track human pose in videos with music alongside groove metrics and beat tracking"
     )
     parser.add_argument(
-        "--custom-keypoints",
+        "--keypoints",
         type=str,
-        help="Override the default face/neck keypoints (default=%(default)s)",
+        default=DEFAULTS["pose_keypoints"],
+        help="Override the default face keypoints (default=%(default)s)",
     )
     parser.add_argument(
         "--bpm-frame-history",
         type=float,
-        default=3.0,
+        default=DEFAULTS["bpm_frame_history"],
         help="History of frames (in seconds) to be included in the window of current bpm computation (default=%(default)s)",
+    )
+    parser.add_argument(
+        "--adaptive-prominence-ratio",
+        type=float,
+        default=DEFAULTS["adaptive_prominence_ratio"],
+        help="Peak prominence will be this*(max_ycoord-min_ycoord) (default=%(default)s)",
+    )
+    parser.add_argument(
+        "--openpose-confidence-threshold",
+        type=float,
+        default=DEFAULTS["openpose_confidence_thresh"],
+        help="Openpose keypoints above this threshold will be preserved (default=%(default)s)",
+    )
+    parser.add_argument(
+        "--object-limit",
+        type=int,
+        default=DEFAULTS["detected_object_limit"],
+        help="Number of objects to track, sorted by their net displacement (default=%(default)s)",
     )
     parser.add_argument(
         "--event-threshold-frames",
         type=int,
-        default=2,
+        default=DEFAULTS["event_thresh_frames"],
         help="Threshold in number of frames by which an event is considered to be the same (default=%(default)s)",
+    )
+    parser.add_argument(
+        "--peak-width",
+        type=int,
+        default=DEFAULTS["peak_width"],
+        help="Peak width (in frames), don't want headbangs too close together (default=%(default)s)",
     )
     parser.add_argument(
         "--debug-motion",
@@ -72,7 +96,12 @@ def main():
     total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
     pose_tracker = OpenposeDetector(
-        total_frames, custom_keypoints=args.custom_keypoints
+        total_frames,
+        keypoints=args.keypoints,
+        obj_limit=args.object_limit,
+        adaptive_prominence_ratio=args.adaptive_prominence_ratio,
+        openpose_confidence_threshold=args.openpose_confidence_threshold,
+        peak_width=args.peak_width,
     )
 
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -307,7 +336,3 @@ def main():
 
     if args.debug_motion:
         pose_tracker.plot_ycoords()
-
-
-if __name__ == "__main__":
-    main()
