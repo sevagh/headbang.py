@@ -22,6 +22,7 @@ class OpenposeDetector:
     def __init__(
         self,
         n_frames,
+        frame_duration,
         keypoints=DEFAULTS["pose_keypoints"],
     ):
         config = {}
@@ -45,6 +46,10 @@ class OpenposeDetector:
         self.n_frames = int(n_frames)
         self.all_y_coords = [OpenposeDetector.undef_coord_default] * self.n_frames
         self.frame_idx = 0
+        self.frame_duration = frame_duration
+        self.total_duration = self.frame_duration * self.n_frames
+
+        print("Started OpenposeDetector for keypoints {0}".format(self.keypoints))
 
     def detect_pose(self, image):
         datum = op.Datum()
@@ -88,27 +93,30 @@ class OpenposeDetector:
 
         # wavelets are good for peaks
         # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2631518/
-        return find_peaks_cwt(adjusted_y_coords, numpy.arange(5, 10))
+        peaks = find_peaks_cwt(adjusted_y_coords, numpy.arange(2, 4))
+        peaks = peaks[numpy.where(numpy.diff(peaks) > 11)[0]]
+        return peaks
 
     def plot_ycoords(self):
         plt.figure(1)
-        plt.title("normalized y coordinate motion")
+        plt.title("normalized median y coordinate motion")
 
-        plt.xlabel("frame")
-        plt.ylabel("y coord")
+        plt.xlabel("time (s)")
+        plt.ylabel("normalized y coordinate")
 
-        frames = numpy.arange(self.n_frames)
+        frame_times = numpy.arange(0.0, self.total_duration, self.frame_duration)
         peaks = self.find_peaks()
 
         y_coords = numpy.asarray(self.all_y_coords)
 
         plt.plot(
-            frames,
+            frame_times,
             y_coords,
             "-D",
             markevery=peaks,
             mec="black",
         )
+        plt.grid()
         plt.show()
 
 

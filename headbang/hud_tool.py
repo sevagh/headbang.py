@@ -14,7 +14,6 @@ from moviepy.audio.AudioClip import AudioArrayClip
 from tempfile import gettempdir
 from headbang.motion import OpenposeDetector, bpm_from_beats
 from headbang.params import DEFAULTS
-from essentia.standard import TempoTapMaxAgreement
 
 from headbang import HeadbangBeatTracker
 
@@ -72,16 +71,18 @@ def main():
 
     total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
-    pose_tracker = OpenposeDetector(
-        total_frames,
-        keypoints=args.keypoints,
-    )
-
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
     frame_duration = 1 / fps
+
+    pose_tracker = OpenposeDetector(
+        total_frames,
+        frame_duration,
+        keypoints=args.keypoints,
+    )
+
     frame_duration_ms = frame_duration * 1000
 
     total_duration = frame_duration * total_frames
@@ -156,15 +157,6 @@ def main():
     if args.debug_motion:
         print("Displaying debug y coordinate plot")
         pose_tracker.plot_ycoords()
-    else:
-        ttap = TempoTapMaxAgreement()
-        # choose best aligning peaks
-        best_peaks = None
-        for i, pks in enumerate(all_peaks):
-            _, peaks = pks
-            peak_times = all_times[peaks]
-            beat_consensus, _ = ttap([all_beat_locations, peak_times])
-            print("FOR PEAKS: {0}, consensus: {1}".format(i, len(beat_consensus)))
 
     event_thresh = args.event_threshold_frames * frame_duration
 
@@ -214,8 +206,6 @@ def main():
         is_strong_beat = False
         is_beat = False
         is_bop = False
-        is_bop_debug2 = False
-        is_bop_debug3 = False
         if any(
             [b for b in all_beat_locations if numpy.abs(b - frame_time) <= event_thresh]
         ):
