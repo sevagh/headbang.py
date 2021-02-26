@@ -202,6 +202,11 @@ Here's a table of some interesting outputs of headbang's algorithms:
       <td>{% include embed-audio.html src="origin_dbn.wav" %}</td>
       <td>{% include embed-audio.html src="origin_hbt.wav" %}</td>
     </tr>
+    <tr>
+      <td><a href="https://www.youtube.com/watch?v=62D2d7ZWyxA">Periphery - Eureka</a></td>
+      <td>{% include embed-audio.html src="eureka_dbn.wav" %}</td>
+      <td>{% include embed-audio.html src="eureka_hbt.wav" %}</td>
+    </tr>
   </tbody>
 </table>
 

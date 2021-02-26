@@ -1,8 +1,0 @@
-numpy==1.19.4
-opencv-python==4.5.1.48
-Pillow==8.1.0
-librosa==0.8.0
-moviepy==1.0.3
-essentia==2.1b6.dev374
-madmom==0.16.1
-scipy==1.6.0
