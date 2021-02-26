@@ -14,6 +14,7 @@ from moviepy.audio.AudioClip import AudioArrayClip
 from tempfile import gettempdir
 from headbang.motion import OpenposeDetector, bpm_from_beats
 from headbang.params import DEFAULTS
+from essentia.standard import TempoTapMaxAgreement
 
 from headbang import HeadbangBeatTracker
 
@@ -35,34 +36,10 @@ def main():
         help="History of frames (in seconds) to be included in the window of current bpm computation (default=%(default)s)",
     )
     parser.add_argument(
-        "--adaptive-prominence-ratio",
-        type=float,
-        default=DEFAULTS["adaptive_prominence_ratio"],
-        help="Peak prominence will be this*(max_ycoord-min_ycoord) (default=%(default)s)",
-    )
-    parser.add_argument(
-        "--openpose-confidence-threshold",
-        type=float,
-        default=DEFAULTS["openpose_confidence_thresh"],
-        help="Openpose keypoints above this threshold will be preserved (default=%(default)s)",
-    )
-    parser.add_argument(
-        "--object-limit",
-        type=int,
-        default=DEFAULTS["detected_object_limit"],
-        help="Number of objects to track, sorted by their net displacement (default=%(default)s)",
-    )
-    parser.add_argument(
         "--event-threshold-frames",
         type=int,
         default=DEFAULTS["event_thresh_frames"],
         help="Threshold in number of frames by which an event is considered to be the same (default=%(default)s)",
-    )
-    parser.add_argument(
-        "--peak-width",
-        type=int,
-        default=DEFAULTS["peak_width"],
-        help="Peak width (in frames), don't want headbangs too close together (default=%(default)s)",
     )
     parser.add_argument(
         "--debug-motion",
@@ -98,10 +75,6 @@ def main():
     pose_tracker = OpenposeDetector(
         total_frames,
         keypoints=args.keypoints,
-        obj_limit=args.object_limit,
-        adaptive_prominence_ratio=args.adaptive_prominence_ratio,
-        openpose_confidence_threshold=args.openpose_confidence_threshold,
-        peak_width=args.peak_width,
     )
 
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -176,23 +149,32 @@ def main():
     all_time = numpy.linspace(0, frame_duration * total_frames, int(total_frames))
 
     # take top peaks only
-    peaks = pose_tracker.find_peaks()[0][1]
+    print("Getting peaks of y motion")
+    peaks = pose_tracker.find_peaks()
     bop_locations = all_time[peaks]
+
+    if args.debug_motion:
+        print("Displaying debug y coordinate plot")
+        pose_tracker.plot_ycoords()
+    else:
+        ttap = TempoTapMaxAgreement()
+        # choose best aligning peaks
+        best_peaks = None
+        for i, pks in enumerate(all_peaks):
+            _, peaks = pks
+            peak_times = all_times[peaks]
+            beat_consensus, _ = ttap([all_beat_locations, peak_times])
+            print("FOR PEAKS: {0}, consensus: {1}".format(i, len(beat_consensus)))
 
     event_thresh = args.event_threshold_frames * frame_duration
 
     print("Marking beat and head bop positions on output frames")
-
-    all_beats_bpm = 0
-    strong_beats_bpm = 0
-    bop_bpm = 0
 
     print("run a gc, just in case...")
     gc.collect()
 
     # define a function to filter the first video to add more stuff
     def process_second_pass(get_frame_fn, frame_time):
-        nonlocal all_beats_bpm, bop_bpm, strong_beats_bpm
         frame = get_frame_fn(frame_time)
 
         frame_max = frame_time
@@ -216,18 +198,14 @@ def main():
             numpy.where((bop_locations >= frame_min) & (bop_locations <= frame_max))
         ]
 
-        all_beats_bpm_tmp = bpm_from_beats(all_beat_history)
-        bop_bpm_tmp = bpm_from_beats(bop_history)
-
-        if not numpy.isnan(all_beats_bpm_tmp):
-            all_beats_bpm = all_beats_bpm_tmp
-
-        if not numpy.isnan(bop_bpm_tmp):
-            bop_bpm = bop_bpm_tmp
+        all_beats_bpm = bpm_from_beats(all_beat_history)
+        bop_bpm = bpm_from_beats(bop_history)
 
         is_strong_beat = False
         is_beat = False
         is_bop = False
+        is_bop_debug2 = False
+        is_bop_debug3 = False
         if any(
             [b for b in all_beat_locations if numpy.abs(b - frame_time) <= event_thresh]
         ):
@@ -333,6 +311,3 @@ def main():
 
     print("cleaning up tmp mp4")
     os.remove(tmp_mp4)
-
-    if args.debug_motion:
-        pose_tracker.plot_ycoords()

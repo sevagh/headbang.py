@@ -1,11 +1,9 @@
-from .percussive_transients import ihpss
+from .transients import ihpss
 from .onset import OnsetDetector, ODF
-from .beattrack import ConsensusBeatTracker
+from .consensus import ConsensusBeatTracker
 from .params import DEFAULTS
 import numpy
 import madmom
-from librosa.beat import beat_track
-from essentia.standard import TempoTapMaxAgreement
 
 
 def align_beats_onsets(beats, onsets, thresh):
@@ -84,8 +82,6 @@ class HeadbangBeatTracker:
         self.release_ms = release_ms
         self.power_memory_ms = power_memory_ms
         self.filter_order = filter_order
-
-        self.ttap = TempoTapMaxAgreement()
 
     def beats(self, x):
         self.beat_consensus = self.cbt.beats(x)
