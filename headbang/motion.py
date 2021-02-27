@@ -129,3 +129,29 @@ def bpm_from_beats(beats):
     beat_step = m_res.slope
 
     return 60 / beat_step
+
+
+def align_beats_motion(beats, motion, thresh):
+    i = 0
+    j = 0
+
+    aligned_beats = []
+    time_since_last_beat = 0.0
+
+    while i < len(motion) and j < len(beats):
+        curr_motion = motion[i]
+        curr_beat = beats[j]
+
+        if numpy.abs(curr_motion - curr_beat) <= thresh:
+            aligned_beats.append(min(curr_motion, curr_beat))
+            i += 1
+            j += 1
+            continue
+
+        if curr_beat < curr_motion:
+            # increment beats
+            j += 1
+        elif curr_beat > curr_motion:
+            i += 1
+
+    return aligned_beats

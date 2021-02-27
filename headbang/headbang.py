@@ -128,7 +128,7 @@ class HeadbangBeatTracker:
 
         self.to_concat = numpy.array([])
 
-        # collect extra beats by applying consensus beat tracking specifically to low-information segments
+        # collect extra beats by aligning with percussive onsets
         for j in beat_jumps:
             try:
                 print(

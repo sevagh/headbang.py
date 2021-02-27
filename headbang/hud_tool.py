@@ -12,10 +12,12 @@ import multiprocessing
 from moviepy.editor import *
 from moviepy.audio.AudioClip import AudioArrayClip
 from tempfile import gettempdir
-from headbang.motion import OpenposeDetector, bpm_from_beats
+from headbang.motion import OpenposeDetector, bpm_from_beats, align_beats_motion
 from headbang.params import DEFAULTS
-
 from headbang import HeadbangBeatTracker
+from headbang.headbang import align_beats_onsets
+from headbang.util import load_wav, overlay_clicks
+from madmom.io.audio import write_wave_file
 
 
 def main():
@@ -45,6 +47,30 @@ def main():
         action="store_true",
         help="Only perform motion detection with matplotlib - no beat tracking",
     )
+    parser.add_argument(
+        "--experimental-wav-out",
+        type=str,
+        default="",
+        help="wav output path for bop clicks",
+    )
+    parser.add_argument(
+        "--experimental-click-lag",
+        type=float,
+        default=DEFAULTS["click_lag"],
+        help="adjustment for motion lagging slightly behind audio (default=%(default)s)",
+    )
+    parser.add_argument(
+        "--experimental-sick-chain-boundary",
+        type=float,
+        default=DEFAULTS["sick_chain_boundary"],
+        help="time boundary to separate sick portions of a song (default=%(default)s)",
+    )
+    parser.add_argument(
+        "--experimental-sick-chain",
+        action="store_true",
+        help="identify and display when a sick chain is occuring (according to the boundary argument)",
+    )
+
     parser.add_argument("mp4_in", type=str, help="mp4 file to process")
     parser.add_argument("mp4_out", type=str, help="mp4 output path")
 
@@ -109,6 +135,8 @@ def main():
     strong_beat_pos = (1600, int(video_height - 50))
     strong_beat_color = (0, 165, 255)
 
+    sick_color = (255, 0, 255)
+
     alpha = 0.90
 
     pose_frame = None
@@ -154,6 +182,12 @@ def main():
     peaks = pose_tracker.find_peaks()
     bop_locations = all_time[peaks]
 
+    aligned_bop_locations = numpy.asarray(
+        align_beats_motion(
+            all_beat_locations, bop_locations, args.experimental_click_lag
+        )
+    )
+
     if args.debug_motion:
         print("Displaying debug y coordinate plot")
         pose_tracker.plot_ycoords()
@@ -167,10 +201,11 @@ def main():
 
     all_beats_bpm = 0
     bop_bpm = 0
+    time_since_last_groove = None
 
     # define a function to filter the first video to add more stuff
     def process_second_pass(get_frame_fn, frame_time):
-        nonlocal all_beats_bpm, bop_bpm
+        nonlocal all_beats_bpm, bop_bpm, time_since_last_groove
         frame = get_frame_fn(frame_time)
 
         frame_max = frame_time
@@ -206,6 +241,7 @@ def main():
         is_strong_beat = False
         is_beat = False
         is_bop = False
+        is_sick = False
         if any(
             [b for b in all_beat_locations if numpy.abs(b - frame_time) <= event_thresh]
         ):
@@ -222,6 +258,19 @@ def main():
             is_bop = True
 
         is_groove = is_bop and is_beat
+
+        if (
+            time_since_last_groove is not None
+            and frame_time - time_since_last_groove
+            <= args.experimental_sick_chain_boundary
+        ):
+            is_sick = True
+        else:
+            # sick chain is broken
+            time_since_last_groove = None
+
+        if is_groove and time_since_last_groove is None:
+            time_since_last_groove = frame_time
 
         if not args.debug_motion:
             if is_beat:
@@ -291,6 +340,19 @@ def main():
             cv2.LINE_AA,
         )
 
+        if args.experimental_sick_chain and is_sick:
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            text = "SICK"
+
+            textsize = cv2.getTextSize(text, font, 26, 12)[0]
+
+            x_text = int((frame.shape[1] - textsize[0]) / 2)
+            y_text = int((frame.shape[0] + textsize[1]) / 2) - 75
+
+            cv2.putText(
+                frame, text, (x_text, y_text), font, 26, sick_color, 12, cv2.LINE_AA
+            )
+
         return frame
 
     print(
@@ -311,3 +373,11 @@ def main():
 
     print("cleaning up tmp mp4")
     os.remove(tmp_mp4)
+
+    if args.experimental_wav_out:
+        print("Overlaying clicks at bop locations")
+        x_stereo = load_wav(video_path, stereo=True)
+        x_with_clicks = overlay_clicks(x_stereo, aligned_bop_locations)
+
+        print("Writing output with clicks to {0}".format(args.experimental_wav_out))
+        write_wave_file(x_with_clicks, args.wav_out, sample_rate=44100)

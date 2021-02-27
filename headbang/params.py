@@ -16,4 +16,7 @@ DEFAULTS = {
     "bpm_frame_history": 2.5,
     "pose_keypoints": "0,15,16,17,18",
     "event_thresh_frames": 2,
+    "bop_align_threshold_s": 0.095,
+    "click_lag": 0.12,
+    "sick_chain_boundary": 2.0,
 }
