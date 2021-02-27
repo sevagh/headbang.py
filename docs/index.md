@@ -10,13 +10,14 @@ headbang.py is a collection of beat-tracking related projects, exploring beat tr
 * headbang: a Python library implementing beat tracking for fully mixed percussive metal songs
     * `ConsensusBeatTracker` is  a beat-tracking ensemble algorithm that combines the outputs of 6 different beat trackers
     * `HeadbangBeatTracker` is a beat-tracking meta-algorithm that aligns the outputs of the consensus beat tracker with strong percussive onsets
-* headbang-hud: a Python script which analyzes MP4 videos and uses 2D pose estimation to track head motion and headbang peaks to display alongside beat tracking results
+* headbang-beats: a Python tool for applying various configurations of the headbang beat tracking algorithms
+* headbang-hud: a Python tool which analyzes MP4 videos and uses 2D pose estimation to track head motion and headbang peaks to display alongside beat tracking results
 
 Instructions for how to install the dependencies and run the various scripts and components are in [the source code's README](https://github.com/sevagh/headbang.py).
 
 Post any questions, concerns, or contributions via GitHub issues.
 
-# headbang: beat tracking algorithms for fully-mixed prog metal
+# headbang-beats: beat tracking algorithms for fully-mixed prog metal
 
 The original motivation of `HeadbangBeatTracker` was to only predict beats that aligned with strong percussive onsets. The most common form of beat tracking output is overlaying clicks on the input audio track - in my opinion, it is very displeasing when the click is wrong. `HeadbangBeatTracker` is focused on eliminating false positives, and will output much fewer "strong beats" than the underlying beat trackers.
 
@@ -144,33 +145,40 @@ This is the final output of the **HeadbangBeatTracker**.
 
 I did the main development and testing of `headbang` with my own ears by overlaying clicks and listening to full-length metal songs continually while tweaking different parameters.
 
-The two useful scripts are `bin/beat_track.py`, which contains command-line arguments for every constructor parameter of `ConsensusBeatTracker` and `HeadbangBeatTracker`, and `bin/reference_beats.py`, which lets us apply each of the individual algorithms separately.
+The useful tool is `headbang-beats`, which contains command-line arguments for every constructor parameter of `ConsensusBeatTracker` and `HeadbangBeatTracker`. Further, by only specifying one algorithm (e.g. `--algorithms=1`) and disabling onset alignment (`--disable-onsets`), we can apply single algorithms at a time as a reference.
 
-The full help text of `beat_track.py` displays the extent of configuration options:
+The full help text of `headbang-beats` displays the extent of configuration options:
 ```
-sevagh:headbang.py $ ./bin/beat_track.py --help
-[   INFO   ] MusicExtractorSVM: no classifier models were configured by default
-usage: headbang.py [-h] [--algorithms ALGORITHMS] [--onset-align-threshold-s ONSET_ALIGN_THRESHOLD_S]
-                   [--max-no-beats MAX_NO_BEATS] [--onset-near-threshold-s ONSET_NEAR_THRESHOLD_S]
-                   [--onset-silence-threshold ONSET_SILENCE_THRESHOLD] [--n-pool N_POOL] [--show-plots] [--disable-onsets]
-                   [--beats-out BEATS_OUT] [--harmonic-margin HARMONIC_MARGIN] [--harmonic-frame HARMONIC_FRAME]
-                   [--percussive-margin PERCUSSIVE_MARGIN] [--percussive-frame PERCUSSIVE_FRAME]
-                   [--fast-attack-ms FAST_ATTACK_MS] [--slow-attack-ms SLOW_ATTACK_MS] [--release-ms RELEASE_MS]
-                   [--power-memory-ms POWER_MEMORY_MS] [--filter-order FILTER_ORDER]
-                   wav_in wav_out
+usage: headbang-beat-tool [-h] [--algorithms ALGORITHMS]
+                          [--onset-align-threshold-s ONSET_ALIGN_THRESHOLD_S]
+                          [--max-no-beats MAX_NO_BEATS]
+                          [--onset-near-threshold-s ONSET_NEAR_THRESHOLD_S]
+                          [--onset-silence-threshold ONSET_SILENCE_THRESHOLD]
+                          [--n-pool N_POOL] [--show-plots] [--disable-onsets]
+                          [--disable-transient-shaper] [--beats-out BEATS_OUT]
+                          [--harmonic-margin HARMONIC_MARGIN]
+                          [--harmonic-frame HARMONIC_FRAME]
+                          [--percussive-margin PERCUSSIVE_MARGIN]
+                          [--percussive-frame PERCUSSIVE_FRAME]
+                          [--fast-attack-ms FAST_ATTACK_MS]
+                          [--slow-attack-ms SLOW_ATTACK_MS]
+                          [--release-ms RELEASE_MS]
+                          [--power-memory-ms POWER_MEMORY_MS]
+                          [--filter-order FILTER_ORDER]
+                          wav_in wav_out
 ```
 
 For example, when I was evaluating different values for the harmonic frame size for HPSS, the evaluation could look something like this:
 ```bash
 for harm_frame in 256 1024 4096 16384; do
-    ./bin/beat_track.py \
+    headbang-beats \
         --harmonic-frame=$harm_frame \
         input_metal_song.wav \
         output_metal_song_harm_frame_$harm_frame.wav
 done
 ```
 
-Using `reference_beats.py`, I was able to pare down the original list of 8 algorithms in the consensus down to 6. Madmom's BeatTrackingProcessor and CRFBeatDetectionProcessor were eliminated, both of which I found to produce poor results (on my custom testbench) on their own, indicating that they were not useful members of the consensus.
+Using comparisons of reference beats, I was able to pare down the original list of 8 algorithms in the consensus down to 6. Madmom's BeatTrackingProcessor and CRFBeatDetectionProcessor were eliminated, both of which I found to produce poor results (on my custom testbench) on their own, indicating that they were not useful members of the consensus.
 
 ### Results
 
@@ -217,25 +225,25 @@ HeadbangBeatTracker is resource-intensive - beyond applying 6 beat tracking algo
 Here are some execution times on a 3 minute 25 second song:
 
 ```
-# madmom DBN
-$ time ./bin/reference_beats.py testcases/hbt/whodatboy.opus testcases/dbn-results/whodatboy.wav
-real    0m25.860s
-user    0m25.562s
-sys     0m0.781s
+# madmom DBN (with slight overhead compared to the bare code due to performing a multiprocessing "consensus of one"
+$ time headbang-beats --algorithms=1 --disable-onsets testcases/hbt/whodatboy.opus testcases/dbn-results/whodatboy.wav
+real    0m33.949s
+user    0m37.078s
+sys     0m12.257s
 
 # consensus beat tracker (no percussive onset alignment)
 # limited by its slowest beat tracker - 6 total beat trackers in parallel
-$ time ./bin/beat_track.py --disable-onsets testcases/hbt/whodatboy.opus testcases/dbn-results/whodatboy.wav
-real    0m34.484s
-user    2m38.270s
-sys     0m3.642s
+$ time headbang-beats --disable-onsets testcases/hbt/whodatboy.opus testcases/hbt-results/whodatboy.wav
+real    0m39.553s
+user    3m36.392s
+sys     0m45.846s
 
 # headbang beat tracker
 # 6 beat trackers + percussive onset alignment stage
-$ time ./bin/beat_track.py testcases/hbt/whodatboy.opus testcases/dbn-results/whodatboy.wav
-real    2m22.342s
-user    15m25.341s
-sys     0m16.574s
+$ time headbang-beats testcases/hbt/whodatboy.opus testcases/hbt-results/whodatboy.wav
+real    2m56.605s
+user    21m48.924s
+sys     0m57.042s
 ```
 
 ## MIREX-inspired evaluation and results
@@ -287,17 +295,29 @@ The goal of headbang-hud to analyze videos that contain metal music (e.g. metal 
 * OpenPose tracked keypoints per frame, drawn on the people
 * <span style="background-color: #000000"><span style="color: #FFFF00">**BOP**</span></span>: head motion peaks, or headbangs , and associated tempo (in bpm)
 * <span style="background-color: #000000"><span style="color: #FF0000">**BEAT**</span></span>: beat outputs of `ConsensusBeatTracker`, and associated tempo (in bpm)
-* <span style="background-color: #000000"><span style="color: #00FF00">**GROOVE**</span></span>: when a BOP and a BEAT hit at the same time, the music _grooves_
+* <span style="background-color: #000000"><span style="color: #00FF00">**GROOVE**</span></span>: when a BOP and a BEAT hit at the same time (or within `--event-threshold-frames` of each other), the music _grooves_
 * <span style="background-color: #000000"><span style="color: #00A5FF">**BEAT+**</span></span>: beat outputs of `HeadbangBeatTracker`
-
-`headbang-hud/headbang-hud.py` is a single script in the overall [headbang.py](https://github.com/sevagh/headbang.py) repository.
 
 ![cc_single_frame](./cc_single_frame.png)
 
-Here's a demo from a live [Cannibal Corpse concert](https://www.youtube.com/watch?v=Y82rls0yoAM):
-{% include embed-video.html src="cc_short.mp4" %}
+Here's a demo from a live [Periphery concert](https://www.youtube.com/watch?v=vlL-Q_IDOm8):
+{% include embed-video.html src="bloodeagle.mp4" %}
 
 The hypothesis is that certain parts of songs are so groovy that they impel either the musician or the audience (or both) to headbang on the beat. If these moments can be identified and displayed alongside MIR beat tracking, they could give us insight into the relation of headbanging to beats.
+
+`headbang-hud` is a tool installed alongside `headbang-beats` as part of the overall [headbang.py](https://github.com/sevagh/headbang.py) project. Like `headbang-beats`, it is configurable through the command-line arguments:
+
+```
+usage: headbang-hud [-h] [--keypoints KEYPOINTS]
+                    [--bpm-history BPM_HISTORY]
+                    [--event-threshold-frames EVENT_THRESHOLD_FRAMES]
+                    [--debug-motion]
+                    [--experimental-wav-out EXPERIMENTAL_WAV_OUT]
+                    [--experimental-bop-align EXPERIMENTAL_BOP_ALIGN]
+                    [--experimental-sick-chain-boundary EXPERIMENTAL_SICK_CHAIN_BOUNDARY]
+                    [--experimental-sick-chain]
+                    mp4_in mp4_out
+```
 
 ## Groove
 
@@ -309,9 +329,9 @@ From this definition I was inspired to look towards the field of computer vision
 
 Strong beats are also associated with groove[[18]](#18), [[19]](#19), which ties in to the two beat tracking algorithms described previously.
 
-## 2D pose estimation with OpenPose
+## 2D motion with OpenPose
 
-The pose estimation component was inspired by the preprinted paper [[20]](#20), at a high level. That paper analyzes beat synchrony of salsa dancers' foot motion. The ideas borrowed were to:
+The motion estimation component was inspired by the preprinted paper [[20]](#20), at a high level. That paper analyzes beat synchrony of salsa dancers' foot motion. The ideas borrowed were to:
 * Use OpenPose to get 2D coordinates for detected keypoints of the body parts of interest
 * Normalize the coordinates
 * Record the normalized coordinates per frame of the video
@@ -321,27 +341,67 @@ The pose estimation component was inspired by the preprinted paper [[20]](#20), 
 
 [![openpose_draw](headbop.png)](https://www.youtube.com/watch?v=DPC9erC5WqU)
 
-In this project, OpenPose is configured to use the BODY_25 model, which is their fastest performing pose detector.
+In this project, OpenPose is configured to use the BODY_25 model, which is their fastest performing pose detector. The keypoints of BODY_25 are defined as follows:
 
-The calculation of head motion and peaks uses the returned (x, y) coordinations, which contains the position of each keypoint per frame. The keypoints `[0, 1, 15, 16, 17, 18]` correspond to the nose, neck, right eye, left eye, right ear, and left ear respectively. The median y coordinate of these keypoints is taken (the x coordinate is discarded, since side-to-side head movement is less typical).
+<img src="./keypoints_pose_25.png" height=640px>
 
-Finally, the y coordinate is normalized by the size of the video to produce values in the range of [0, 1.0]. In this way, for every frame of the video, we have the median normalized y coordinate of the head and neck region, which correspond to headbanging motion.
+### Implementation details
 
-From the y coordinates accumulated from all of the video frames, [scipy find_peaks_cwt](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks_cwt.html) is used with a width of 10 (e.g. find 1 peak every 10 frames), which gives us robust results for tracking the extreme ranges of motion while avoiding spurious peaks.
+The calculation of head motion and peaks uses the returned (x, y) coordinations, which contains the position of each keypoint per frame. The keypoints `[0, 15, 16, 17, 18]` correspond to the nose, right eye, left eye, right ear, and left ear respectively. Only the y coordinate is considered, since side-to-side motion is less typical in headbanging.
 
-This plot shows the resulting normalized median y coordinate evolution over time (i.e. motion) with detected peaks (magenta lines mark the peaks):
+Interestingly, even though typically the _bottom_ of the headbanging motion, or the valley, is supposed to coincide with the perceived beat, considering valleys instead of peaks (either through specialized valley-finding algorithms, or by using peak picking with an inverted y coordinate curve), led to totally unusable results. There could be some relation to some delay of motion and perceived auditory beat, which is naturally accounted for by considering the top of the arc of motion rather than the bottom.
 
-<img src="./ycoordpeaks.png" width=300px/>
+The following tricky situations were encountered in different testcases:
+* OpenPose will return multiple sets of keypoints, one for each detected person in the frame. The first naive approach was to only consider the first detected object; this didn't always work because it's possible that the other people in the frame are the ones headbanging, not necessarily the first. The solution was to take the median y coordinate motion across (and limited to) the first 3 objects in the frame. This way, even if the first object is stationary, the y coordinate curve would display the motion of the (possible) next 2 objects.
+    ```python
+    # collect (x, y) coordinates of the head, median across the first object_limit objects
+    for detected_poses in multiple_detected_poses[
+        : OpenposeDetector.object_limit
+    ]:
+        for keypoint, d in enumerate(detected_poses):
+            if (
+                keypoint in self.keypoints
+                and d[2] > OpenposeDetector.min_confidence
+            ):
+                poses_of_interest.append((d[0], d[1]))
+    
+    poses_of_interest = numpy.asarray(poses_of_interest)
+    median_coords = numpy.median(poses_of_interest, axis=0)
+    ```
+    Note that `object_limit` is a fixed class-level variable, not configurable by the user. I found any measurements for more than 3 objects to be impractical and unstable.
+* The tracked object may disappear from frame to frame (due to shaky/unstable camera footage, etc.). The solution was to initialize an array of y coordinates for each frame of the video with NaN values, and replace the NaN with a well-defined y coordinate if it was available.
+
+Finally, the median y coordinate across the first 3 objects is normalized by the size of the video to produce a single value in the range of [0, 1.0]. In this way, for every frame of the video, we have the median normalized y coordinate of the head and face region of at least 3 people, which should correspond to headbanging motion.
+
+From the y coordinates accumulated from all of the video frames, [scipy find_peaks_cwt](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks_cwt.html) is applied in the following code, with parameters and additional smoothing chosen to produce the best results in the observed testcases:
+
+```python
+def find_peaks(self):
+    min_coord = numpy.nanmin(self.all_y_coords)
+    adjusted_y_coords = numpy.nan_to_num(self.all_y_coords, nan=min_coord)
+
+    # wavelets are good for peaks
+    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2631518/
+    peaks = find_peaks_cwt(adjusted_y_coords, numpy.arange(2, 4))
+    peaks = peaks[numpy.where(numpy.diff(peaks) > 11)[0]]
+    return peaks
+```
+
+First, the NaN values in the y coordinate vector are replaced with the minimum y coordinate position seen. The values of `(2, 4)` in `find_peaks_cwt` indicate that detected peaks should have at least 2 frames between them, and at most 4 frames distance apart. Finally, some additional smoothing is done to remove peaks that are closer than 11 frames, due to this being typically implausibly fast human motion - at 30 fps (which is typical for the analyzed videos), 11 frames corresponds to 0.37 seconds.
+
+The following plots show the resulting normalized median y coordinate evolution over time (i.e. motion) with detected peaks, generated with the `--debug-motion` option of headbang-hud:
+
+![ycoordpeaks](./ycoordpeaks.png)
 
 These peaks in y coordinate motion of the head and torso are called "bops", or the pose/motion analog of a beat.
 
 ### Using different keypoints
 
-The command line flag `--custom-keypoints` takes a comma-separated string representing different BODY_25 pose keypoints (overriding the default face and neck). All possible values can be seen here:
+The command line flag `--keypoints` takes a comma-separated string representing different BODY_25 pose keypoints (overriding the default face and neck). All possible values can be seen here:
 * <https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/18de3a0010dd65484b3eb357b5c3679c9a2fdf43/doc/02_output.md#pose-output-format-body_25>
 * <https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/18de3a0010dd65484b3eb357b5c3679c9a2fdf43/doc/02_output.md#keypoint-ordering-in-cpython>
 
-For example, in the drummer demo, I used `./headbang-hud/headbang-hud.py --custom-keypoints "2,3,4,5,6,7"` - those keypoints correspond to the left and right arms (shoulder, elbow, wrist).
+For example, in the drum demos, I use `headbang-hud --keypoints "2,3,4,5,6,7"` to track the left and right arms (shoulder, elbow, wrist).
 
 ## BPM estimation
 
@@ -359,11 +419,11 @@ def bpm_from_beats(beats):
     return 60 / beat_step
 ```
 
-In the code, events (beats or bops) from the last 3 seconds of history are considered in the bpm computation, so it may take some time for the bpm to "converge" to correctness after a stable sequence of events.
+In the code, events (beats or bops) from the last 2.5 seconds (or `--bpm-history`) of history are considered in the bpm computation, so it may take some time for the bpm to "converge" to correctness after a stable sequence of events.
 
 Also, the subjects in the video may move however they want - finding a stable bpm from motion depends on processing frames displaying very clear and stable periodic motion, but sequences like this are rare in natural videos.
 
-With a minimal test we can verify the correct functioning of the bpm function:
+With a minimal test we can verify the bpm function:
 ```python
 duration = 10
 bpms = [60, 72, 75, 83, 95, 113, 152]
@@ -394,8 +454,21 @@ for bpm in bpms:
 
 Note the off-beat head bops at first, which transition to being on-beat.
 
-Here's a clip from drummer [Anup Sastry - Titan](https://www.youtube.com/watch?v=Y82rls0yoAM), where the motion is tracked on the left and right arms (instead of the head and neck):
+Here's a clip from drummer [Anup Sastry - Ghost](https://www.youtube.com/watch?v=gjk2Vvqj-vk), where the motion is tracked on the right arm (instead of the head and neck):
 {% include embed-video.html src="anupsastry_short.mp4" %}
+
+### Experimental features
+
+Beyond just "being cool", headbang-hud has some potentially interesting applications. One of them is to supplement bad beat tracking results with motion. The feature is gated with `--experimental-wav-out`. The code is similar to the beat and onset alignment of the headbang beat tracker, but the minimum of beat and bop (or head motion peak) is taken as the perceptual beat event (within a window of `0.12s`, or `--experimental-bop-align`). The minimum is taken since often, motion peaks lag ever so slightly behind the perceptual beat.
+
+Short excerpt from the same Anup Sastry drum clip above:
+{% include embed-audio.html src="anup_sastry_right_bops.wav" %}
+
+The next experimental feature is a potential breakdown detector. I named it "sick", since instead of trying to specify or define the metal term for breakdown, I prefer to think of it as an informally cool or "sick" part of the song. Here's an example of a totally sick part of a live Periphery concert:
+
+{% include embed-video.html src="periphery_sick.mp4" %}
+
+Portions of the video are marked "sick" when there is an unbroken chain of groove events, or times when peaks of headbanging motion (or bops) coincide with a beat, within `--experimental-sick-chain-boundary`, by default 2 seconds. If the sick chain is broken, the sick counter is reset until the next groove event. Use this feature with the `--experimental-sick-chain` flag.
 
 ## Code diagram
 
@@ -420,7 +493,7 @@ In headbang.py, two aspects of beat tracking were explored:
     * From the MIREX SMC testbench, we can see that some configurations of the `ConsensusBeatTracker` can rival the Goto score of the standalone DBN beat tracker, demonstrating the effectiveness of ensemble or consensus-based techniques. In spite of this outcome, the default of the project is still set to all 6 algorithms (for producing the best perceptual results in the overall `HeadbangBeatTracker`, in my opinion).
 * Second, musical videos with people headbanging (or moving in general) were analyzed, and peaks in motion were tracked and displayed along with the beat tracking outputs of `HeadbangBeatTracker`.
 
-The code uses modern Python (3.7+), is intentionally lightweight to be extended and modified, and uses well-known and leading open-source libraries for math and numerical computing (numpy, scipy, matplotlib), MIR (essentia, madmom, librosa),  and computer vision (OpenCV, OpenPose).
+The code uses modern Python (3.7+), is intended to be configured, extended, and modified, and uses well-known and leading open-source libraries for math and numerical computing (numpy, scipy, matplotlib), MIR (essentia, madmom, librosa),  and computer vision (OpenCV, OpenPose).
 
 # References
 

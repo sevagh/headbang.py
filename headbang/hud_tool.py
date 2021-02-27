@@ -31,10 +31,10 @@ def main():
         help="Override the default face keypoints (default=%(default)s)",
     )
     parser.add_argument(
-        "--bpm-frame-history",
+        "--bpm-history",
         type=float,
-        default=DEFAULTS["bpm_frame_history"],
-        help="History of frames (in seconds) to be included in the window of current bpm computation (default=%(default)s)",
+        default=DEFAULTS["bpm_history"],
+        help="History of video (in seconds) to be included in the window of current bpm computation (default=%(default)s)",
     )
     parser.add_argument(
         "--event-threshold-frames",
@@ -54,10 +54,10 @@ def main():
         help="wav output path for bop clicks",
     )
     parser.add_argument(
-        "--experimental-click-lag",
+        "--experimental-bop-align",
         type=float,
-        default=DEFAULTS["click_lag"],
-        help="adjustment for motion lagging slightly behind audio (default=%(default)s)",
+        default=DEFAULTS["bop_align"],
+        help="align bops and beats within this duration window (s) (default=%(default)s)",
     )
     parser.add_argument(
         "--experimental-sick-chain-boundary",
@@ -184,7 +184,7 @@ def main():
 
     aligned_bop_locations = numpy.asarray(
         align_beats_motion(
-            all_beat_locations, bop_locations, args.experimental_click_lag
+            all_beat_locations, bop_locations, args.experimental_bop_align
         )
     )
 
@@ -209,7 +209,7 @@ def main():
         frame = get_frame_fn(frame_time)
 
         frame_max = frame_time
-        frame_min = max(0, frame_time - args.bpm_frame_history)
+        frame_min = max(0, frame_time - args.bpm_history)
 
         all_beat_history = all_beat_locations[
             numpy.where(
@@ -380,4 +380,4 @@ def main():
         x_with_clicks = overlay_clicks(x_stereo, aligned_bop_locations)
 
         print("Writing output with clicks to {0}".format(args.experimental_wav_out))
-        write_wave_file(x_with_clicks, args.wav_out, sample_rate=44100)
+        write_wave_file(x_with_clicks, args.experimental_wav_out, sample_rate=44100)
