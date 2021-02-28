@@ -39,7 +39,12 @@ def main():
     parser.add_argument(
         "--debug-motion",
         action="store_true",
-        help="Only perform motion detection with matplotlib - no beat tracking",
+        help="Only perform motion detection with matplotlib with debug plot",
+    )
+    parser.add_argument(
+        "--debug-bpm",
+        action="store_true",
+        help="Use with --debug-motion, also display bpm estimation",
     )
     parser.add_argument(
         "--experimental-wav-out",
@@ -171,10 +176,6 @@ def main():
         )
     )
 
-    if args.debug_motion:
-        print("Displaying debug y coordinate plot")
-        pose_tracker.plot_ycoords()
-
     event_thresh = args.event_threshold_frames * frame_duration
 
     print("Marking beat and head bop positions on output frames")
@@ -186,9 +187,11 @@ def main():
     bop_bpm = 0
     time_since_last_groove = None
 
+    bop_bpm_plot_history = []
+
     # define a function to filter the first video to add more stuff
     def process_second_pass(get_frame_fn, frame_time):
-        nonlocal all_beats_bpm, bop_bpm, time_since_last_groove
+        nonlocal all_beats_bpm, bop_bpm, time_since_last_groove, bop_bpm_plot_history
         frame = get_frame_fn(frame_time)
 
         frame_max = frame_time
@@ -213,6 +216,9 @@ def main():
 
         if not numpy.isnan(bop_bpm_tmp):
             bop_bpm = bop_bpm_tmp
+
+        if args.debug_bpm:
+            bop_bpm_plot_history.append((bop_history, bop_bpm))
 
         is_strong_beat = False
         is_beat = False
@@ -357,3 +363,7 @@ def main():
 
         print("Writing output with clicks to {0}".format(args.experimental_wav_out))
         write_wave_file(x_with_clicks, args.experimental_wav_out, sample_rate=44100)
+
+    if args.debug_motion:
+        print("Displaying debug y coordinate and bpm plots")
+        pose_tracker.plot_ycoords(bop_bpm_plot_history, args.debug_bpm)

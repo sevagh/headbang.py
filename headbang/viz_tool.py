@@ -6,16 +6,7 @@ import pandas as pd
 import multiprocessing
 from moviepy.editor import AudioFileClip, VideoClip, CompositeAudioClip
 from headbang import HeadbangBeatTracker
-from headbang.util import load_wav
-
-
-def find_closest(A, target):
-    idx = A.searchsorted(target)
-    idx = numpy.clip(idx, 1, len(A) - 1)
-    left = A[idx - 1]
-    right = A[idx]
-    idx -= target - left < right - target
-    return idx
+from headbang.util import load_wav, find_closest
 
 
 def main():
@@ -62,8 +53,8 @@ def main():
     times_vector = numpy.arange(0, total_duration, frame_duration)
 
     all_beat_times = individual_tracker_beat_locations + [
-        strong_beat_locations,
         hbt.beat_consensus,
+        strong_beat_locations,
     ]
 
     all_beat_frames = [

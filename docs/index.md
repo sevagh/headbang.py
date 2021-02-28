@@ -12,6 +12,7 @@ headbang.py is a collection of beat-tracking related projects, exploring beat tr
     * `HeadbangBeatTracker` is a beat-tracking meta-algorithm that aligns the outputs of the consensus beat tracker with strong percussive onsets
 * headbang-beats: a Python tool for applying various configurations of the headbang beat tracking algorithms
 * headbang-hud: a Python tool which analyzes MP4 videos and uses 2D pose estimation to track head motion and headbang peaks to display alongside beat tracking results
+* headbang-viz: a Python tool which creates an animation for the consensus beat tracking algorithm
 
 Instructions for how to install the dependencies and run the various scripts and components are in [the source code's README](https://github.com/sevagh/headbang.py).
 
@@ -312,6 +313,7 @@ usage: headbang-hud [-h] [--keypoints KEYPOINTS]
                     [--bpm-history BPM_HISTORY]
                     [--event-threshold-frames EVENT_THRESHOLD_FRAMES]
                     [--debug-motion]
+                    [--debug-bpm]
                     [--experimental-wav-out EXPERIMENTAL_WAV_OUT]
                     [--experimental-bop-align EXPERIMENTAL_BOP_ALIGN]
                     [--experimental-sick-chain-boundary EXPERIMENTAL_SICK_CHAIN_BOUNDARY]
@@ -345,9 +347,9 @@ In this project, OpenPose is configured to use the BODY_25 model, which is their
 
 <img src="./keypoints_pose_25.png" height=640px>
 
-### Implementation details
+### Pose preprocessing
 
-The calculation of head motion and peaks uses the returned (x, y) coordinations, which contains the position of each keypoint per frame. The keypoints `[0, 15, 16, 17, 18]` correspond to the nose, right eye, left eye, right ear, and left ear respectively. Only the y coordinate is considered, since side-to-side motion is less typical in headbanging.
+The calculation of head motion and peaks uses the returned (x, y) coordinates, which contains the position of each keypoint per frame. The keypoints `[0, 15, 16, 17, 18]` correspond to the nose, right eye, left eye, right ear, and left ear respectively. Only the y coordinate is considered, since side-to-side motion is less typical in headbanging.
 
 Interestingly, even though typically the _bottom_ of the headbanging motion, or the valley, is supposed to coincide with the perceived beat, considering valleys instead of peaks (either through specialized valley-finding algorithms, or by using peak picking with an inverted y coordinate curve), led to totally unusable results. There could be some relation to some delay of motion and perceived auditory beat, which is naturally accounted for by considering the top of the arc of motion rather than the bottom.
 
@@ -373,6 +375,8 @@ The following tricky situations were encountered in different testcases:
 
 Finally, the median y coordinate across the first 3 objects is normalized by the size of the video to produce a single value in the range of [0, 1.0]. In this way, for every frame of the video, we have the median normalized y coordinate of the head and face region of at least 3 people, which should correspond to headbanging motion.
 
+### Peak picking
+
 From the y coordinates accumulated from all of the video frames, [scipy find_peaks_cwt](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks_cwt.html) is applied in the following code, with parameters and additional smoothing chosen to produce the best results in the observed testcases:
 
 ```python
@@ -395,6 +399,10 @@ The following plots show the resulting normalized median y coordinate evolution 
 
 These peaks in y coordinate motion of the head and torso are called "bops", or the pose/motion analog of a beat.
 
+Note that peak picking is tricky, and the code above was discovered through lots of trial and error. Here are some useful resources for Python peak picking:
+* <https://stackoverflow.com/a/52612432/4023381>
+* <https://openwritings.net/pg/python/python-find-peaks-and-valleys-using-scipysignalfindpeakscwt>
+
 ### Using different keypoints
 
 The command line flag `--keypoints` takes a comma-separated string representing different BODY_25 pose keypoints (overriding the default face and neck). All possible values can be seen here:
@@ -403,7 +411,7 @@ The command line flag `--keypoints` takes a comma-separated string representing 
 
 For example, in the drum demos, I use `headbang-hud --keypoints "2,3,4,5,6,7"` to track the left and right arms (shoulder, elbow, wrist).
 
-## BPM estimation
+### BPM estimation
 
 Tempo estimation given beat locations can be defined as the inter-beat interval. One way of computing this is by getting the slope of scipy's linear regression across the beat times. I got the idea from [this GitHub issue on madmom](https://github.com/CPJKU/madmom/issues/416):
 
@@ -440,6 +448,12 @@ for bpm in bpms:
 # 112.99999999999999
 # 152.00000000000003
 ```
+
+Also, using the flag `--debug-bpm` in addition to `--debug-motion` will display red lines through the y coordinate peaks used for the bpm estimation, and the corresponding bpm value. Every 30 frames are skipped, otherwise the plot would be too dense and unreadable:
+
+![ycoordpeaksbpm](./ycoordpeaks_with_bpm.png)
+
+This plot was generated from the Anup Sastry demo shown below, where it can be observed that the tempo from motion peaks lines up with the tempo from beat locations.
 
 ## Demos
 
@@ -480,15 +494,33 @@ Note the two-step process:
 
 The two-pass design was chosen out of necessity; keeping all of the frames of the video in-memory while performing all of the processing was leading to huge memory usage (32+GB) for long videos.
 
-# Discussion
+# headbang-viz: visualize beat tracking consensus
+
+The last tool in the headbang.py project is `headbang-viz`. One of the best ways to verify beat tracking results is sonification of the beat annotations with clicks (demonstrated previously). This is trickier in a consensus or ensemble algorithm with multiple candidates. A visual animation would work better.
+
+The chosen animation was to create bouncing numbers from 0-8 (representing the 6 individual beat trackers, the ConsensusBeatTracker, and the HeadbangBeatTracker), that bounce between two positions on the on- and off-beat locations. The implementation is something like this:
+* Obtain beat locations (per algorithm), prepend 0 and append the end of the song (total duration). E.g., beats for a 3 second song = [0, 1.2, 1.5, 2.3, 2.6, 2.8, 3.0]
+* Obtain off-beat locations by taking midpoints between every beat location. E.g, off-beats for the above = [0.6, 1.35, 1.9, 2.45, 2.7, 2.9]
+* Convert timestamps (in seconds) to frame indices for the total frames of the video
+* Create an array of positions for all the frames of the video, initialized to NaN
+* Set beat locations to 1 and off-beat locations to -1, e.g. [1, NaN, NaN, -1, NaN, NaN,  1, NaN, NaN, -1, ...]
+* Use pandas interpolate to replace the NaN values with interpolations - e.g. [-1, NaN, NaN, 1] becomes [-1, -0.6667, -0.3333, 1]
+* Draw the beat tracker's location at `center + positions[frame]*offset` to make the beat tracker bounce between `center-offset` and `center+offset`
+
+A potential use of `headbang-viz` is debugging some particularly tricky songs - for example, Periphery - Eureka was shown above as a difficult case:
+
+{% include embed-video.html src="eureka_viz.mp4" %}
+
+# Discussion and conclusion
 
 From [[20]](#20), [[22]](#22), and [[23]](#23), we can see multiple new (2020) papers that consider human pose and motion alongside traditional MIR techniques.
 
-In headbang.py, two aspects of beat tracking were explored:
+In headbang.py, three aspects of beat tracking were explored:
 * First, a beat tracking algorithm was designed to mimic how a person would headbang (only emit strong beats, no hidden or silent beats, keep beats spaced apart by a window, etc.).
     * I hope that from the perceptual results, I have convinced you that `HeadbangBeatTracker` emits good results that can be used for a variety of tasks, such as beat-driven animations or visual effects.
     * From the MIREX SMC testbench, we can see that some configurations of the `ConsensusBeatTracker` can rival the Goto score of the standalone DBN beat tracker, demonstrating the effectiveness of ensemble or consensus-based techniques. In spite of this outcome, the default of the project is still set to all 6 algorithms (for producing the best perceptual results in the overall `HeadbangBeatTracker`, in my opinion).
 * Second, musical videos with people headbanging (or moving in general) were analyzed, and peaks in motion were tracked and displayed along with the beat tracking outputs of `HeadbangBeatTracker`.
+* Third, a custom visualization tool was developed which renders mp4 animations of the headbang and consensus beat tracking algorithms - this should help in observing or debugging tricky cases
 
 The code uses modern Python (3.7+), is intended to be configured, extended, and modified, and uses well-known and leading open-source libraries for math and numerical computing (numpy, scipy, matplotlib), MIR (essentia, madmom, librosa),  and computer vision (OpenCV, OpenPose).
 

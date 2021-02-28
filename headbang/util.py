@@ -27,3 +27,12 @@ def overlay_clicks(x, beats):
         clicks = numpy.column_stack((clicks, clicks))  # convert to stereo
 
     return (x + clicks).astype(numpy.single)
+
+
+def find_closest(A, target):
+    idx = A.searchsorted(target)
+    idx = numpy.clip(idx, 1, len(A) - 1)
+    left = A[idx - 1]
+    right = A[idx]
+    idx -= target - left < right - target
+    return idx

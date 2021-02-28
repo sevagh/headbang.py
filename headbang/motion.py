@@ -4,6 +4,7 @@ import scipy
 from scipy.signal import find_peaks_cwt
 import matplotlib.pyplot as plt
 from headbang.params import DEFAULTS
+from headbang.util import find_closest
 
 openpose_install_path = "/home/sevagh/thirdparty-repos/openpose"
 
@@ -96,7 +97,9 @@ class OpenposeDetector:
         peaks = peaks[numpy.where(numpy.diff(peaks) > 11)[0]]
         return peaks
 
-    def plot_ycoords(self):
+    def plot_ycoords(
+        self, bop_bpm_plot_history, debug_bpm=False, debug_bpm_frame_skip=30
+    ):
         plt.figure(1)
         plt.title("normalized median y coordinate motion")
 
@@ -115,6 +118,28 @@ class OpenposeDetector:
             markevery=peaks,
             mec="black",
         )
+
+        if debug_bpm:
+            # skip every 10 frames for bpm plot
+            for i, bop_bpm_hist in enumerate(
+                bop_bpm_plot_history[:-debug_bpm_frame_skip]
+            ):
+                if i % debug_bpm_frame_skip != 0:
+                    continue
+                bop_times, bpm = bop_bpm_hist
+                x = find_closest(frame_times, bop_times)
+                if x.size > 2:
+                    text_x = (
+                        frame_times[x[-2]]
+                        + (frame_times[x[-1]] - frame_times[x[-2]]) / 2
+                    )
+                    y = y_coords[x]
+
+                    text_y = max(y) + 0.03
+
+                    plt.plot(frame_times[x], y, "r")
+                    plt.text(text_x, text_y, "{0}".format(int(round(bpm))))
+
         plt.grid()
         plt.show()
 
