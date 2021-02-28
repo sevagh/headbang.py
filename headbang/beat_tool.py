@@ -14,9 +14,7 @@ from headbang.params import DEFAULTS
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="headbang-beat-tool",
         description="Accurate percussive beat tracking for metal songs",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     beat_args = parser.add_argument_group("beat arguments")

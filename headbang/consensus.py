@@ -15,7 +15,7 @@ from .params import DEFAULTS
 
 
 algo_names = [
-    "_",
+    "_", # dummy at index 0 because in this code, beat trackers start at 1: "1,2,3...8"
     "madmom DBNBeatTrackingProcessor",
     "madmom BeatDetectionProcessor",
     "essentia BeatTrackerMultiFeature",
@@ -57,6 +57,7 @@ class ConsensusBeatTracker:
         self.beat_tracking_algorithms = [int(x) for x in algorithms.split(",")]
 
         self.ttap = TempoTapMaxAgreement()
+        self.beat_results = None
 
     def print_params(self):
         print(

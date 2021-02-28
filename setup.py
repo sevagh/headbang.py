@@ -58,6 +58,7 @@ setup(
         'console_scripts': [
             'headbang-beats=headbang.beat_tool:main',
             'headbang-hud=headbang.hud_tool:main',
+            'headbang-viz=headbang.viz_tool:main',
         ],
     },
     install_requires=REQUIRED,
