@@ -15,7 +15,7 @@ from .params import DEFAULTS
 
 
 algo_names = [
-    "_", # dummy at index 0 because in this code, beat trackers start at 1: "1,2,3...8"
+    "_",  # dummy at index 0 because in this code, beat trackers start at 1: "1,2,3...8"
     "madmom DBNBeatTrackingProcessor",
     "madmom BeatDetectionProcessor",
     "essentia BeatTrackerMultiFeature",

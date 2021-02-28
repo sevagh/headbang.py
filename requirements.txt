@@ -11,3 +11,4 @@ moviepy==1.0.3
 essentia==2.1b6.dev374
 madmom==0.16.1
 scipy==1.6.0
+pandas
