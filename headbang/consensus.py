@@ -1,7 +1,4 @@
-import sys
-import multiprocessing
 import numpy
-import librosa
 import btrack
 import itertools
 from essentia.standard import (

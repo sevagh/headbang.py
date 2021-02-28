@@ -1,28 +1,15 @@
 import numpy
-import time
 import cv2
-import sys
 import itertools
 import argparse
-import sys
-import librosa
 import pandas as pd
-import gc
-import os
 import multiprocessing
-from collections import OrderedDict
-from moviepy.editor import *
-from moviepy.audio.AudioClip import AudioArrayClip
-from tempfile import gettempdir
-from headbang.params import DEFAULTS
+from moviepy.editor import AudioFileClip, VideoClip, CompositeAudioClip
 from headbang import HeadbangBeatTracker
-from headbang.util import load_wav, overlay_clicks
-from headbang.consensus import algo_names
-from madmom.io.audio import write_wave_file
+from headbang.util import load_wav
 
 
 def find_closest(A, target):
-    # A must be sorted
     idx = A.searchsorted(target)
     idx = numpy.clip(idx, 1, len(A) - 1)
     left = A[idx - 1]
@@ -42,7 +29,7 @@ def main():
     pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1)
     hbt = HeadbangBeatTracker(pool)
 
-    audio, _ = librosa.load(args.wav_in, sr=44100, dtype=numpy.float32, mono=True)
+    audio = load_wav(args.wav_in)
 
     # get beat locations
     print("Getting beat locations using consensus beat tracking")
@@ -61,7 +48,6 @@ def main():
         (0, 255, 255),  # cyan
         (145, 112, 235),  # blue-violet
     ]
-    colorcycle = itertools.cycle(colors)
 
     fps = 30
 
@@ -69,7 +55,6 @@ def main():
     video_height = 1080
 
     frame_duration = 1 / fps
-    frame_duration_ms = frame_duration * 1000
 
     total_duration = numpy.floor(float(audio.shape[0]) / 44100.0)
     total_frames = int(numpy.ceil(total_duration / frame_duration))

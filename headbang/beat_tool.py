@@ -1,10 +1,7 @@
 import matplotlib.pyplot as plt
 import argparse
 import multiprocessing
-import sys
-import json
 import numpy
-import librosa
 from madmom.io.audio import write_wave_file
 
 from headbang import HeadbangBeatTracker

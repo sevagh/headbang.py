@@ -7,8 +7,6 @@ from essentia.standard import (
     FFT,
     CartesianToPolar,
     FrameGenerator,
-    BeatTrackerMultiFeature,
-    BeatTrackerDegara,
 )
 from essentia import Pool, array
 

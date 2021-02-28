@@ -1,6 +1,5 @@
 import numpy
 import sys
-import os
 import scipy
 from scipy.signal import find_peaks_cwt
 import matplotlib.pyplot as plt
@@ -124,10 +123,7 @@ def bpm_from_beats(beats):
     if beats.size == 0:
         return 0
     m_res = scipy.stats.linregress(numpy.arange(len(beats)), beats)
-
-    first_beat = m_res.intercept
     beat_step = m_res.slope
-
     return 60 / beat_step
 
 
@@ -136,7 +132,6 @@ def align_beats_motion(beats, motion, thresh):
     j = 0
 
     aligned_beats = []
-    time_since_last_beat = 0.0
 
     while i < len(motion) and j < len(beats):
         curr_motion = motion[i]

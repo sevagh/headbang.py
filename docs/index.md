@@ -412,10 +412,7 @@ def bpm_from_beats(beats):
     if beats.size == 0:
         return 0
     m_res = scipy.stats.linregress(numpy.arange(len(beats)), beats)
-
-    first_beat = m_res.intercept
     beat_step = m_res.slope
-
     return 60 / beat_step
 ```
 

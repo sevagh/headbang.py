@@ -3,7 +3,6 @@ from .onset import OnsetDetector, ODF
 from .consensus import ConsensusBeatTracker
 from .params import DEFAULTS
 import numpy
-import madmom
 
 
 def align_beats_onsets(beats, onsets, thresh):
@@ -11,7 +10,6 @@ def align_beats_onsets(beats, onsets, thresh):
     j = 0
 
     aligned_beats = []
-    time_since_last_beat = 0.0
 
     while i < len(onsets) and j < len(beats):
         curr_onset = onsets[i]

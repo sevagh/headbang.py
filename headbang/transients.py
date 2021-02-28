@@ -186,7 +186,6 @@ def ihpss(
     S_h1, S_p1 = hpss(S1, margin=harmonic_margin, power=numpy.inf)  # hard mask
     S_r1 = S1 - (S_h1 + S_p1)
 
-    yh = fix_length(istft(S_h1, dtype=x.dtype), len(x))
     yp1 = fix_length(istft(S_p1, dtype=x.dtype), len(x))
     yr1 = fix_length(istft(S_r1, dtype=x.dtype), len(x))
 

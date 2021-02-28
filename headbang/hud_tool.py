@@ -1,21 +1,15 @@
 import numpy
-import time
 import cv2
-import sys
-import itertools
 import argparse
-import sys
 import librosa
 import gc
 import os
 import multiprocessing
-from moviepy.editor import *
-from moviepy.audio.AudioClip import AudioArrayClip
+from moviepy.editor import CompositeAudioClip, AudioFileClip, VideoFileClip, VideoClip
 from tempfile import gettempdir
 from headbang.motion import OpenposeDetector, bpm_from_beats, align_beats_motion
 from headbang.params import DEFAULTS
 from headbang import HeadbangBeatTracker
-from headbang.headbang import align_beats_onsets
 from headbang.util import load_wav, overlay_clicks
 from madmom.io.audio import write_wave_file
 
@@ -98,9 +92,6 @@ def main():
     total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
     fps = cap.get(cv2.CAP_PROP_FPS)
-    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
     frame_duration = 1 / fps
 
     pose_tracker = OpenposeDetector(
@@ -109,17 +100,10 @@ def main():
         keypoints=args.keypoints,
     )
 
-    frame_duration_ms = frame_duration * 1000
-
     total_duration = frame_duration * total_frames
-
-    chunk_size = int(numpy.round(frame_duration * 44100))
 
     video_width = 1920
     video_height = 1080
-
-    plot_width = int(video_width / 4)
-    plot_height = int(video_height / 4.5)
 
     bop_pos = (100, int(video_height - 50))
     bop_bpm_pos = (280, int(video_height - 50))
@@ -139,7 +123,6 @@ def main():
 
     alpha = 0.90
 
-    pose_frame = None
     blank_frame = numpy.zeros((video_height, video_width, 3), numpy.uint8)
 
     def process_first_pass(*args, **kwargs):
@@ -214,13 +197,6 @@ def main():
         all_beat_history = all_beat_locations[
             numpy.where(
                 (all_beat_locations >= frame_min) & (all_beat_locations <= frame_max)
-            )
-        ]
-
-        strong_beat_history = strong_beat_locations[
-            numpy.where(
-                (strong_beat_locations >= frame_min)
-                & (strong_beat_locations <= frame_max)
             )
         ]
 
