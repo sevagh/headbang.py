@@ -4,7 +4,7 @@ headbang.py is a collection of projects related to beat tracking in metal music.
 
 See more at https://sevagh.github.io/headbang.py
 
-### Installation
+## Installation
 
 headbang has been written and verified with Python 3.8 on an amd64 machine running Fedora 32 Linux. However, there shouldn't be any problems running it on different machines if the requirements can be successfully installed.
 
@@ -26,34 +26,53 @@ sevagh:python-module $ pip3.8 install --user -e .
 
 After installing BTrack for headbang, you also need to build and install [openpose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) from source. I followed the instructions for building and installing the Python module successfully on Python 3.7, Fedora 32, amd64 with no issues.
 
-### Beat tracking algorithm
+Once the dependencies are installed, you can install headbang with pip or the setup.py file using your Python package manager of choice:
+
+```
+# demo user install to system python
+$ pip install --user -r ./requirements.txt
+$
+$ headbang-
+headbang-beats  headbang-hud    headbang-viz
+```
+
+## Beat tracking algorithm
 
 ![headbang_block_diagram](./docs/hbt_block_diagram.png)
 
-### Beat tracking usage
+The Python classes are [ConsensusBeatTracker](https://github.com/sevagh/headbang.py/blob/master/headbang/consensus.py#L49) and [HeadbangBeatTracker](https://github.com/sevagh/headbang.py/blob/master/headbang/headbang.py#L35). Example usage:
 
-Headbang consists of:
-* [ConsensusBeatTracker](https://github.com/sevagh/headbang.py/blob/master/headbang/consensus.py#L49) and [HeadbangBeatTracker](https://github.com/sevagh/headbang.py/blob/master/headbang/headbang.py#L35)
-  ```python
-  import multiprocessing
-  import librosa
+```python
+import multiprocessing
+import librosa
 
-  from headbang.consensus import ConsensusBeatTracker
-  from headbang import HeadbangBeatTracker
+from headbang.consensus import ConsensusBeatTracker
+from headbang import HeadbangBeatTracker
 
-  pool = multiprocessing.Pool()
+pool = multiprocessing.Pool()
 
-  x, fs = librosa.load('mysongwithbeats.wav')
-  cbt = ConsensusBeatTracker(pool)
-  hbt = HeadbangBeatTracker(pool)
+# you must use 44100 (enforced by the inner beat trackers)
 
-  cbt_beats = cbt.beats(x)
-  hbt_beats = hbt.beats(x)
-  ```
-* [`headbang-beats`](./headbang/beat_tool.py), which implements all of the parameters of the consensus and headbang beat trackers in command-line arguments, loads an audio file, gets beat locations, and outputs an audio file with clicks on the beat locations.
+x, _ = librosa.load('mysongwithbeats.wav', sr=44100)
+cbt = ConsensusBeatTracker(pool)
+hbt = HeadbangBeatTracker(pool)
 
-### HUD usage
+cbt_beats = cbt.beats(x)
+hbt_beats = hbt.beats(x)
+```
 
-[headbang-hud](./headbang/hud_tool.py) is a combined MIR beat tracking and 2D pose estimation project for tracking beats and headbanging motion in videos with music (concert footage, covers, music videos, etc.):
+## Beat tracking tool
+
+The installed tool [`headbang-beats`](./headbang/beat_tool.py) implements all of the parameters of the consensus and headbang beat trackers in command-line arguments, loads an audio file, gets beat locations, and outputs an audio file with clicks on the beat locations.
+
+## HUD tool
+
+[`headbang-hud`](./headbang/hud_tool.py) is a combined MIR beat tracking and 2D pose estimation project for tracking beats and headbanging motion in videos with music (concert footage, covers, music videos, etc.):
 
 ![hud_code_arch](./docs/hud_code_arch.png)
+
+## Viz tool
+
+[`headbang-viz`](./headbang/viz_tool.py) creates a visualization of the competing beat trackers and renders the animation in an mp4 video alongside the input audio:
+
+![viz_output](./misc/output.gif)
