@@ -344,7 +344,7 @@ def main():
     print("run a gc, just in case...")
     gc.collect()
 
-    out_clip_tmp = VideoFileClip(tmp_mp4)
+    out_clip_tmp = VideoFileClip(tmp_mp4, fps_source="fps")
     out_clip2 = out_clip_tmp.fl(process_second_pass)
 
     audio_clip = AudioFileClip(video_path)

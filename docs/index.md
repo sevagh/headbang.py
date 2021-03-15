@@ -216,6 +216,11 @@ Here's a table of some interesting outputs of headbang's algorithms:
       <td>{% include embed-audio.html src="eureka_dbn.wav" %}</td>
       <td>{% include embed-audio.html src="eureka_hbt.wav" %}</td>
     </tr>
+    <tr>
+      <td><a href="https://www.youtube.com/watch?v=8saKHKt1A5Q">Animals as Leaders - Lippincott</a></td>
+      <td>{% include embed-audio.html src="lippincott_dbn.wav" %}</td>
+      <td>{% include embed-audio.html src="lippincott_hbt.wav" %}</td>
+    </tr>
   </tbody>
 </table>
 
@@ -323,13 +328,13 @@ usage: headbang-hud [-h] [--keypoints KEYPOINTS]
 
 ## Groove
 
-headbang-hud started off as groove-dashboard, inspired by this paper[[17]](#17), which associates audio signal features or MIR features to human judgements of groove. The paper defines groove as follows:
+"Whenever listeners have the impulsion to bob their heads in synchrony with music, the groove phenomenon is at work."[[24]](#24)
+
+headbang-hud started off with the name "groove-dashboard", inspired by this paper[[17]](#17), which associates audio signal features or MIR features to human judgements of groove. The paper defines groove as follows:
 
 >The experience of groove is associated with the urge to move to a musical rhythm
 
-From this definition I was inspired to look towards the field of computer vision and pose estimation to track the motion jointly with musical measures of groove.
-
-Strong beats are also associated with groove[[18]](#18), [[19]](#19), which ties in to the two beat tracking algorithms described previously.
+From this definition I was inspired to look towards the field of computer vision and pose estimation to track headbanging head motion. Strong beats are also associated with groove[[18]](#18), [[19]](#19), which ties in to the two beat tracking algorithms described previously.
 
 ## 2D motion with OpenPose
 
@@ -498,14 +503,47 @@ The two-pass design was chosen out of necessity; keeping all of the frames of th
 
 The last tool in the headbang.py project is `headbang-viz`. One of the best ways to verify beat tracking results is sonification of the beat annotations with clicks (demonstrated previously). This is trickier in a consensus or ensemble algorithm with multiple candidates. A visual animation would work better.
 
-The chosen animation was to create bouncing numbers from 0-8 (representing the 6 individual beat trackers, the ConsensusBeatTracker, and the HeadbangBeatTracker), that bounce between two positions on the on- and off-beat locations. The implementation is something like this:
-* Obtain beat locations (per algorithm), prepend 0 and append the end of the song (total duration). E.g., beats for a 3 second song = [0, 1.2, 1.5, 2.3, 2.6, 2.8, 3.0]
-* Obtain off-beat locations by taking midpoints between every beat location. E.g, off-beats for the above = [0.6, 1.35, 1.9, 2.45, 2.7, 2.9]
-* Convert timestamps (in seconds) to frame indices for the total frames of the video
-* Create an array of positions for all the frames of the video, initialized to NaN
-* Set beat locations to 1 and off-beat locations to -1, e.g. [1, NaN, NaN, -1, NaN, NaN,  1, NaN, NaN, -1, ...]
-* Use pandas interpolate to replace the NaN values with interpolations - e.g. [-1, NaN, NaN, 1] becomes [-1, -0.6667, -0.3333, 1]
-* Draw the beat tracker's location at `center + positions[frame]*offset` to make the beat tracker bounce between `center-offset` and `center+offset`
+The chosen animation was to create bouncing numbers from 0-8 (representing the 6 individual beat trackers, the ConsensusBeatTracker, and the HeadbangBeatTracker), that bounce between two positions on the on- and off-beat locations. The implementation is as follows:
+* Convert beat times (in seconds) to frames by finding the closest frame; prepend 0 and append the end of the song:
+  ```python
+  times_vector = numpy.arange(0, total_duration, frame_duration)
+
+  on_beat_frames =  numpy.concatenate((
+                            numpy.zeros(1),
+                            find_closest(times_vector, beat_times),
+                            numpy.ones(1)*(total_frames-1),
+                    ))
+  ```
+* Obtain off-beat locations by taking midpoints between every beat location:
+  ```python
+  off_beat_frames = [
+      ((x[1:] + x[:-1]) / 2).astype(numpy.int) for x in on_beat_frames
+  ]
+  ```
+* Create an array of positions for all the frames of the video. Set beat locations to 1, off-beat locations to -1, and all other times to NaN:
+  ```python
+  x = (
+          numpy.empty(
+              total_frames,
+          )
+          * numpy.nan
+      )
+
+  x[on_beat_frames[i]] = 1
+  x[off_beat_frames[i]] = -1
+  ```
+* Use pandas interpolate to replace the NaN values with interpolations:
+  ```python
+  a = pd.Series(x)
+  positions = a.interpolate().to_numpy()
+  ```
+* Draw the beat tracker visual marker around a center point offset by the beat positions per frame:
+  ```python
+  current_position = (
+      center[0],
+      int(center[1] + (box_height / 2 - 100) * positions[frame]),
+  )
+  ```
 
 A potential use of `headbang-viz` is debugging some particularly tricky songs - for example, Periphery - Eureka was shown above as a difficult case:
 
@@ -542,12 +580,12 @@ J. Zapata, M. Davies and E. Gómez, "Multi-feature beat tracker," IEEE/ACM Trans
 N. Degara, E. A. Rua, A. Pena, S. Torres-Guijarro, M. E. Davies, and M. D. Plumbley, "Reliability-informed beat tracking of musical signals," IEEE Transactions on Audio, Speech, and Language Processing, vol. 20, no. 1, pp. 290–301, 2012. <https://www.eecs.qmul.ac.uk/~markp/2012/DegaraArgonesRuaPenaTDP12-taslp_accepted.pdf>
 
 <a id="6">[6]</a>
-Ellis, Daniel PW. “Beat tracking by dynamic programming.” Journal of New Music Research 36.1 (2007): 51-60. <http://labrosa.ee.columbia.edu/projects/beattrack/>
+Ellis, Daniel PW, "Beat tracking by dynamic programming," Journal of New Music Research 36.1 (2007): 51-60. <http://labrosa.ee.columbia.edu/projects/beattrack/>
 
 <a id="7">[7]</a>
-Real-Time Beat-Synchronous Analysis of Musical Audio, A. M. Stark, M. E. P. Davies and M. D. Plumbley. In Proceedings of the 12th International Conference on Digital Audio Effects (DAFx-09), Como, Italy, September 1-4, 2009. <https://www.eecs.qmul.ac.uk/~markp/2009/StarkDaviesPlumbley09-dafx.pdf>
+A. M. Stark, M. E. P. Davies and M. D. Plumbley, "Real-Time Beat-Synchronous Analysis of Musical Audio," Proceedings of the 12th International Conference on Digital Audio Effects (DAFx-09), Como, Italy, September 1-4, 2009. <https://www.eecs.qmul.ac.uk/~markp/2009/StarkDaviesPlumbley09-dafx.pdf>
 
-<a id="8">[8]></a>
+<a id="8">[8]</a>
 J. R. Zapata, A. Holzapfel, M. E. Davies, J. L. Oliveira, and F. Gouyon, "Assigning a confidence threshold on automatic beat annotation in large datasets," in International Society for Music Information Retrieval Conference (ISMIR’12), 2012. <http://mtg.upf.edu/system/files/publications/Jose_Zapata_et_al_157_ISMIR_2012.pdf>
 
 <a id="9">[9]</a>
@@ -557,7 +595,7 @@ Fitzgerald, Derry. (2010). Harmonic/Percussive Separation using Median Filtering
 Driedger, Jonathan & Müller, Meinard & Disch, Sascha. (2014). Extending Harmonic-Percussive Separation of Audio Signals. <https://www.audiolabs-erlangen.de/content/05-fau/assistant/00-driedger/01-publications/2014_DriedgerMuellerDisch_ExtensionsHPSeparation_ISMIR.pdf>
 
 <a id="11">[11]</a>
-Gier, H & Paul White, "SPL Transient Designer, DUAL-CHANNEL, Model 9946, Manual". <https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf>
+Gier, H & White, P, "SPL Transient Designer, DUAL-CHANNEL, Model 9946, Manual". <https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf>
 
 <a id="12">[12]</a>
 P. Masri and A. Bateman, “Improved modelling of attack transients in music analysis-resynthesis,” in Proceedings of the International Computer Music Conference, 1996, pp. 100–103. <http://hans.fugal.net/comps/papers/masri_1996.pdf>
@@ -578,10 +616,10 @@ Matthew E. P. Davies,  Norberto Degara, and Mark D. Plumbley. "Evaluation Method
 Stupacher, Jan & Hove, Michael & Janata, Petr. (2016). Audio Features Underlying Perceived Groove and Sensorimotor Synchronization in Music. Music Perception. 33. 571-589. 10.1525/mp.2016.33.5.571. <https://www.researchgate.net/publication/291351443_Audio_Features_Underlying_Perceived_Groove_and_Sensorimotor_Synchronization_in_Music>
 
 <a id="18">[18]</a>
-Madison G, Gouyon F, Ullen F. Musical groove is correlated with properties of the audio signal as revealed by computational modelling, depending on musical style. In: Proceedings of the SMC 2009—6th Sound and Music Computing Conference. 2009. p. 239–40. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.487.1456&rep=rep1&type=pdf>
+Madison G, Gouyon F, Ullen F. "Musical groove is correlated with properties of the audio signal as revealed by computational modelling, depending on musical style." Proceedings of the SMC 2009—6th Sound and Music Computing Conference. 2009. p. 239–40. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.487.1456&rep=rep1&type=pdf>
 
 <a id="19">[19]</a>
-Madison G, Gouyon F, Ullén F, Hörnström K. Modeling the tendency for music to induce movement in humans: First correlations with low-level audio descriptors across music genres. J Exp Psychol Hum Percept Perform. 2011; 37:1578–1594. pmid:21728462. <https://www.researchgate.net/publication/51466595_Modeling_the_Tendency_for_Music_to_Induce_Movement_in_Humans_First_Correlations_With_Low-Level_Audio_Descriptors_Across_Music_Genres>
+Madison G, Gouyon F, Ullén F, Hörnström K. "Modeling the tendency for music to induce movement in humans: First correlations with low-level audio descriptors across music genres." J Exp Psychol Hum Percept Perform. 2011; 37:1578–1594. pmid:21728462. <https://www.researchgate.net/publication/51466595_Modeling_the_Tendency_for_Music_to_Induce_Movement_in_Humans_First_Correlations_With_Low-Level_Audio_Descriptors_Across_Music_Genres>
 
 <a id="20">[20]</a>
 Quantifying music-dance synchrony with the application of a deep learning-based 2D pose estimator. Filip Potempski, Andrea Sabo, Kara K Patterson. bioRxiv 2020.10.09.333617; doi: https://doi.org/10.1101/2020.10.09.333617. <https://www.biorxiv.org/content/10.1101/2020.10.09.333617v1.full>
@@ -594,3 +632,6 @@ Schindler, Alexander. (2020). Multi-Modal Music Information Retrieval: Augmentin
 
 <a id="23">[23]</a>
 Fabrizio Pedersoli, Masataka Goto, "Dance Beat Tracking from Visual Information Alone", ISMIR 2020. <https://program.ismir2020.net/poster_3-10.html>
+
+<a id="24">[24]</a>
+Senn, Olivier, Lorenz Kilchenmann, T. Bechtold and Florian Hoesl. "Groove in drum patterns as a function of both rhythmic properties and listeners' attitudes." PLoS ONE 13 (2018). <https://www.semanticscholar.org/paper/Groove-in-drum-patterns-as-a-function-of-both-and-Senn-Kilchenmann/725d3ff0530338ee264adc665377fbe966fd6723>

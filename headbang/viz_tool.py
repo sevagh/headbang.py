@@ -77,7 +77,7 @@ def main():
         ((x[1:] + x[:-1]) / 2).astype(numpy.int) for x in all_beat_frames
     ]
 
-    all_positions = []  # []
+    all_positions = []
     for i in range(len(all_beat_frames)):
         x = (
             numpy.empty(
