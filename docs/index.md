@@ -565,73 +565,73 @@ The code uses modern Python (3.7+), is intended to be configured, extended, and 
 # References
 
 <a id="1">[1]</a>
-Sebastian Böck and Markus Schedl, “Enhanced Beat Tracking with Context-Aware Neural Networks”, Proceedings of the 14th International Conference on Digital Audio Effects (DAFx), 2011. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.227.9109&rep=rep1&type=pdf>
+Böck, Sebastian, and Markus Schedl. 2011. “Enhanced Beat Tracking with Context-Aware Neural Networks.” In Proceedings of the 14th International Conference on Digital Audio Effects, DAFx 2011. September. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.227.9109&rep=rep1&type=pdf>.
 
 <a id="2">[2]</a>
-Florian Krebs, Sebastian Böck and Gerhard Widmer, “An Efficient State Space Model for Joint Tempo and Meter Tracking”, Proceedings of the 16th International Society for Music Information Retrieval Conference (ISMIR), 2015. <https://pdfs.semanticscholar.org/5ee6/fdeb4d195466767c37947d459852173a4fb2.pdf>
+Krebs, F., S. Böck, and G. Widmer. 2015. “An Efficient State-Space Model for Joint Tempo and Meter Tracking.” In ISMIR. <http://www.cp.jku.at/research/papers/Krebs_etal_ISMIR_2015.pdf>.
 
 <a id="3">[3]</a>
-Sebastian Böck, Florian Krebs and Gerhard Widmer, “Accurate Tempo Estimation based on Recurrent Neural Networks and Resonating Comb Filters”, Proceedings of the 16th International Society for Music Information Retrieval Conference (ISMIR), 2015. <http://ismir2015.uma.es/articles/196_Paper.pdf>
+Böck, S., F. Krebs, and G. Widmer. 2015. “Accurate Tempo Estimation Based on Recurrent Neural Networks and Resonating Comb Filters.” In ISMIR. <http://ismir2015.uma.es/articles/196_Paper.pdf>.
 
 <a id="4">[4]</a>
-J. Zapata, M. Davies and E. Gómez, "Multi-feature beat tracker," IEEE/ACM Transactions on Audio, Speech and Language Processing. 22(4), 816-825, 2014. <http://www.cmap.polytechnique.fr/~bacry/MVA/getpapers.php?file=beattracking.pdf&type=pdf>
+Zapata, Jose, Matthew Davies, and Emilia Gómez. 2014. “Multi-Feature Beat Tracking.” Audio, Speech, and Language Processing, IEEE/ACM Transactions on 22 (April): 816–825. <https://doi.org/10.1109/TASLP.2014.2305252>. <http://www.cmap.polytechnique.fr/~bacry/MVA/getpapers.php?file=beattracking.pdf&type=pdf>.
 
 <a id="5">[5]</a>
-N. Degara, E. A. Rua, A. Pena, S. Torres-Guijarro, M. E. Davies, and M. D. Plumbley, "Reliability-informed beat tracking of musical signals," IEEE Transactions on Audio, Speech, and Language Processing, vol. 20, no. 1, pp. 290–301, 2012. <https://www.eecs.qmul.ac.uk/~markp/2012/DegaraArgonesRuaPenaTDP12-taslp_accepted.pdf>
+Degara, Norberto, Enrique Argones-Rúa, Antonio S. Pena, S. Torres-Guijarro, M. Davies, and Mark D. Plumbley. 2012. “Reliability-Informed Beat Tracking of Musical Signals.” IEEE Transactions on Audio, Speech, and Language Processing 20:290–301. <http://www.eecs.qmul.ac.uk/~markp/2012/DegaraArgonesRuaPenaTDP12-taslp_accepted.pdf>.
 
 <a id="6">[6]</a>
-Ellis, Daniel PW, "Beat tracking by dynamic programming," Journal of New Music Research 36.1 (2007): 51-60. <http://labrosa.ee.columbia.edu/projects/beattrack/>
+Ellis, Daniel. 2007. “Beat Tracking by Dynamic Programming.” Journal of New Music Research 36 (March): 51–60. <https://doi.org/10.1080/09298210701653344>. <http://www.music.mcgill.ca/~ich/classes/mumt621_09/presentations/wingate/27406228.pdf>.
 
 <a id="7">[7]</a>
-A. M. Stark, M. E. P. Davies and M. D. Plumbley, "Real-Time Beat-Synchronous Analysis of Musical Audio," Proceedings of the 12th International Conference on Digital Audio Effects (DAFx-09), Como, Italy, September 1-4, 2009. <https://www.eecs.qmul.ac.uk/~markp/2009/StarkDaviesPlumbley09-dafx.pdf>
+Stark, Adam, Matthew Davies, and Mark Plumbley. 2009. “Real-time beat-synchronous analysis of musical audio.” September. <https://www.eecs.qmul.ac.uk/~markp/2009/StarkDaviesPlumbley09-dafx.pdf>.
 
 <a id="8">[8]</a>
-J. R. Zapata, A. Holzapfel, M. E. Davies, J. L. Oliveira, and F. Gouyon, "Assigning a confidence threshold on automatic beat annotation in large datasets," in International Society for Music Information Retrieval Conference (ISMIR’12), 2012. <http://mtg.upf.edu/system/files/publications/Jose_Zapata_et_al_157_ISMIR_2012.pdf>
+Zapata, Jose, André Holzapfel, Matthew Davies, João Oliveira, and Fabien Gouyon. 2012. “Assigning a confidence threshold on automatic beat annotation in large datasets.” Proceedings of the 13th International Society for Music Information Retrieval Conference, ISMIR 2012 (January). <https://ismir2012.ismir.net/event/papers/157_ISMIR_2012.pdf>.
 
 <a id="9">[9]</a>
 Fitzgerald, Derry. (2010). Harmonic/Percussive Separation using Median Filtering. 13th International Conference on Digital Audio Effects (DAFx-10). <http://dafx10.iem.at/papers/DerryFitzGerald_DAFx10_P15.pdf>
 
 <a id="10">[10]</a>
-Driedger, Jonathan & Müller, Meinard & Disch, Sascha. (2014). Extending Harmonic-Percussive Separation of Audio Signals. <https://www.audiolabs-erlangen.de/content/05-fau/assistant/00-driedger/01-publications/2014_DriedgerMuellerDisch_ExtensionsHPSeparation_ISMIR.pdf>
+Driedger, Jonathan, Meinard Müller, and Sascha Disch. 2014. Extending Harmonic-Percussive Separation of Audio Signals, January. <https://www.audiolabs-erlangen.de/content/05-fau/assistant/00-driedger/01-publications/2014_DriedgerMuellerDisch_ExtensionsHPSeparation_ISMIR.pdf>.
 
 <a id="11">[11]</a>
-Gier, H & White, P, "SPL Transient Designer, DUAL-CHANNEL, Model 9946, Manual". <https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf>
+Gier, H, and P White. 1999. SPL Transient Designer, DUAL-CHANNEL, Model 9946, Manual. <https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf>.
 
 <a id="12">[12]</a>
-P. Masri and A. Bateman, “Improved modelling of attack transients in music analysis-resynthesis,” in Proceedings of the International Computer Music Conference, 1996, pp. 100–103. <http://hans.fugal.net/comps/papers/masri_1996.pdf>
+Masri, Paul, and Andrew Bateman. 1996. “Improved modeling of attack transients in music analysis-resynthesis,” 100–103. <http://hans.fugal.net/comps/papers/masri_1996.pdf>.
 
 <a id="13">[13]</a>
-J. Laroche, "Efficient Tempo and Beat Tracking in Audio Recordings," JAES, vol. 51, no. 4, pp. 226–233, 2003. <https://www.researchgate.net/publication/200806212_Efficient_Tempo_and_Beat_Tracking_in_Audio_Recordings>
+Laroche, Jean. 2003. “Efficient Tempo and Beat Tracking in Audio Recordings.” Journal of the Audio Engineering Society (JAES) 51 (April): 226–233.
 
 <a id="14">[14]</a>
-Holzapfel, A.; Davies, M.E.P.; Zapata, J.R.; Oliveira, J.L.; Gouyon, F.; , "Selective Sampling for Beat Tracking Evaluation," Audio, Speech, and Language Processing, IEEE Transactions on , vol.20, no.9, pp.2539-2548, Nov. 2012. doi: 10.1109/TASL.2012.2205244. <http://mtg.upf.edu/system/files/publications/HolzapfelEtAl12-taslp.pdf>
+Holzapfel, Andre, Matthew Davies, Jose Zapata, João Oliveira, and Fabien Gouyon. 2012. “Selective Sampling for Beat Tracking Evaluation.” Audio, Speech, and Language Processing, IEEE Transactions on 20 (November): 2539–2548. <https://doi.org/10.1109/TASL.2012.2205244>. <http://mtg.upf.edu/system/files/publications/HolzapfelEtAl12-taslp.pdf>.
 
 <a id="15">[15]</a>
-Colin Raffel, Brian McFee, Eric J. Humphrey, Justin Salamon, Oriol Nieto, Dawen Liang, and Daniel P. W. Ellis, "mir_eval: A Transparent Implementation of Common MIR Metrics", Proceedings of the 15th International Conference on Music Information Retrieval, 2014. <https://dawenl.github.io/publications/Raffel14-mireval.pdf>
+Raffel, Colin, Brian Mcfee, Eric Humphrey, Justin Salamon, Oriol Nieto, Dawen Liang, and Daniel Ellis. 2014. “mir_eval: A Transparent Implementation of Common MIR Metrics.” October. <https://dawenl.github.io/publications/Raffel14-mireval.pdf>.
 
 <a id="16">[16]</a>
-Matthew E. P. Davies,  Norberto Degara, and Mark D. Plumbley. "Evaluation Methods for Musical Audio Beat Tracking Algorithms", Queen Mary University of London Technical Report C4DM-TR-09-06, London, United Kingdom, 8 October 2009. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.152.6936&rep=rep1&type=pdf>
+Davies, Matthew, Norberto Degara Quintela, and Mark Plumbley. 2009. Evaluation Methods for Musical Audio Beat Tracking Algorithms, October. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.152.6936&rep=rep1&type=pdf>.
 
-<a id="17">[17]</a> 
-Stupacher, Jan & Hove, Michael & Janata, Petr. (2016). Audio Features Underlying Perceived Groove and Sensorimotor Synchronization in Music. Music Perception. 33. 571-589. 10.1525/mp.2016.33.5.571. <https://www.researchgate.net/publication/291351443_Audio_Features_Underlying_Perceived_Groove_and_Sensorimotor_Synchronization_in_Music>
+<a id="17">[17]</a>
+Stupacher, Jan, Michael Hove, and Petr Janata. 2016. “Audio Features Underlying Perceived Groove and Sensorimotor Synchronization in Music.” Music Perception 33 (June): 571–589. <https://doi.org/10.1525/mp.2016.33.5.571>. <https://www.researchgate.net/publication/291351443_Audio_Features_Underlying_Perceived_Groove_and_Sensorimotor_Synchronization_in_Music>.
 
 <a id="18">[18]</a>
-Madison G, Gouyon F, Ullen F. "Musical groove is correlated with properties of the audio signal as revealed by computational modelling, depending on musical style." Proceedings of the SMC 2009—6th Sound and Music Computing Conference. 2009. p. 239–40. <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.487.1456&rep=rep1&type=pdf>
+Madison, Guy, Fabien Gouyon, Fredrik Ullén, Inesc Porto, and Karolinska Institutet. 2009. “Musical groove is correlated with properties of the audio signal as revealed by computational modelling, depending on musical style.” Proceedings of the 6th Sound and Music Computing Conference, SMC 2009 (January). <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.487.1456&rep=rep1&type=pdf>.
 
 <a id="19">[19]</a>
-Madison G, Gouyon F, Ullén F, Hörnström K. "Modeling the tendency for music to induce movement in humans: First correlations with low-level audio descriptors across music genres." J Exp Psychol Hum Percept Perform. 2011; 37:1578–1594. pmid:21728462. <https://www.researchgate.net/publication/51466595_Modeling_the_Tendency_for_Music_to_Induce_Movement_in_Humans_First_Correlations_With_Low-Level_Audio_Descriptors_Across_Music_Genres>
+Madison, Guy, Fabien Gouyon, Fredrik Ullén, and Kalle Hörnström. 2011. “Modeling the Tendency for Music to Induce Movement in Humans: First Correlations With Low-Level Audio Descriptors Across Music Genres.” Journal of experimental psychology. Human perception and performance 37 (July): 1578–94. <https://doi.org/10.1037/a0024323>. <https://www.researchgate.net/publication/51466595_Modeling_the_Tendency_for_Music_to_Induce_Movement_in_Humans_First_Correlations_With_Low-Level_Audio_Descriptors_Across_Music_Genres>.
 
 <a id="20">[20]</a>
-Quantifying music-dance synchrony with the application of a deep learning-based 2D pose estimator. Filip Potempski, Andrea Sabo, Kara K Patterson. bioRxiv 2020.10.09.333617; doi: https://doi.org/10.1101/2020.10.09.333617. <https://www.biorxiv.org/content/10.1101/2020.10.09.333617v1.full>
+Potempski, Filip, Andrea Sabo, and Kara Patterson. 2020. Quantifying music-dance synchrony with the application of a deep learning-based 2D pose estimator, October. <https://doi.org/10.1101/2020.10.09.333617>. <https://www.biorxiv.org/content/10.1101/2020.10.09.333617v1>.
 
 <a id="21">[21]</a>
-Z. Cao, G. Hidalgo, T. Simon, S. -E. Wei and Y. Sheikh, "OpenPose: Realtime Multi-Person 2D Pose Estimation Using Part Affinity Fields," in IEEE Transactions on Pattern Analysis and Machine Intelligence, vol. 43, no. 1, pp. 172-186, 1 Jan. 2021, doi: 10.1109/TPAMI.2019.2929257. <https://arxiv.org/pdf/1812.08008.pdf>
+Cao, Zhe, Gines Hidalgo, Tomas Simon, Shih-En Wei, and Yaser Sheikh. 2019. OpenPose: Realtime Multi-Person 2D Pose Estimation using Part Affinity Fields. arXiv: 1812 . 08008 [cs.CV]. <https://arxiv.org/pdf/1812.08008.pdf>.
 
 <a id="22">[22]</a>
-Schindler, Alexander. (2020). Multi-Modal Music Information Retrieval: Augmenting Audio-Analysis with Visual Computing for Improved Music Video Analysis. <https://arxiv.org/pdf/2002.00251.pdf>
+Schindler, Alexander. 2020. Multi-Modal Music Information Retrieval: Augmenting Audio-Analysis with Visual Computing for Improved Music Video Analysis. arXiv: 2002.00251 [cs.MM]. <https://arxiv.org/pdf/2002.00251.pdf>.
 
 <a id="23">[23]</a>
-Fabrizio Pedersoli, Masataka Goto, "Dance Beat Tracking from Visual Information Alone", ISMIR 2020. <https://program.ismir2020.net/poster_3-10.html>
+Pedersoli, Fabrizio, and Masataka Goto. 2020. “Dance Beat Tracking from Visual Information Alone.” In ISMIR 2020. <https://program.ismir2020.net/poster_3-10.html>.
 
 <a id="24">[24]</a>
-Senn, Olivier, Lorenz Kilchenmann, T. Bechtold and Florian Hoesl. "Groove in drum patterns as a function of both rhythmic properties and listeners' attitudes." PLoS ONE 13 (2018). <https://www.semanticscholar.org/paper/Groove-in-drum-patterns-as-a-function-of-both-and-Senn-Kilchenmann/725d3ff0530338ee264adc665377fbe966fd6723>
+Senn, Olivier, Lorenz Kilchenmann, T. Bechtold, and Florian Hoesl. 2018. “Groove in drum patterns as a function of both rhythmic properties and listeners’ attitudes.” PLoS ONE 13. <https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0199604>.
