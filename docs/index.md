@@ -105,7 +105,7 @@ The parameters of the HPSS can be modified (but I don't find it changes the resu
 * `percussive_frame=256` (a smaller frame size in the second iteration gives us higher time resolution which helps separate short, sharp percussive events)
 * `percussive_margin=2.3`
 
-**Transients are enhanced** using a differential-envelope transient enhancer adapted from the SPL differential envelope transient shaper[[1]](#1). This enhances the percussive attacks and gates sustained/steady-state sounds, making a more sparse "drum hit waveform":
+**Transients are enhanced** using a differential-envelope transient enhancer adapted from the SPL differential envelope transient shaper[[11]](#11). This enhances the percussive attacks and gates sustained/steady-state sounds, making a more sparse "drum hit waveform":
 
 ![percussive_transient_enhanced](percussive_transient_enhanced.png)
 
