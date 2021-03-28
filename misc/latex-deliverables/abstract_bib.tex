@@ -41,15 +41,16 @@
 
 \vspace{2em}
 
-headbang.py is a Python library and collection of command-line tools which explored three aspects of MIR beat tracking:
+headbang.py is a Python library and collection of command-line tools which explored two aspects of MIR beat tracking:
 
 \begin{enumerate}
 	\item
-		Audio beat tracking which considered the outputs of 6 separate beat tracking algorithms in a consensus, and aligned the result with strong percussive onsets in metal music. The goal was to locate strong beats where a human may headbang due to the psychological phenomenon of groove (\cite{groove}). Future ideas include using the beat tracking outputs to drive some form of beat-related visualization, such as an automated flashing light show or automatic music video generation.
+		Audio beat tracking which considered the outputs of 6 separate beat tracking algorithms in a consensus, and aligned the result with strong percussive onsets in metal music. The goal was to locate strong beats where a human may headbang due to the psychological phenomenon of groove (\cite{groove}). Future ideas include using the beat tracking outputs to drive some form of beat-related visualization, such as an automated flashing light show or automatic music video generation.\\
+
+		\vspace{-0.75em}
+		In addition to the consensus beat tracker, a visual animation tool was created to compare the outputs of the different beat trackers. This tool could be be used to further improve the consensus beat tracking algorithm through visual observation, which could help create a bespoke consensus algorithm that works best for a particular genre of music in different projects.
 	\item
 		Motion analysis of human subjects in metal musical videos (e.g., concert footage, or clips of musicians playing instruments). The OpenPose 2D pose estimation library (\cite{openpose}) was used to analyze peaks in the vertical motion of the head and face, to track headbanging motion and tempo alongside audio beat and tempo tracking analysis. Future ideas could use the headbanging motion analysis tool to supplement beat locations in a song where audio beat tracking alone gives poor results. It can also be used to detect very groovy sections of songs where many subjects in the video are headbanging in unison (indicating a strong agreement on the beat).
-	\item
-		Visual tool to compare the outputs of different beat trackers. This tool could be be used to further improve the consensus beat tracking algorithm by visually observing different beat trackers -- this could help create a bespoke consensus algorithm that works best for a particular genre of music.
 \end{enumerate}
 
 The source code of headbang.py is available,\footnote{\url{https://github.com/sevagh/headbang.py}} and there is also a website\footnote{\url{https://sevagh.github.io/headbang.py}} with design documents, diagrams, and audio and video sample outputs.
