@@ -8,7 +8,7 @@
 headbang.py is a collection of beat-tracking related projects, exploring beat tracking and the phenomenon of headbanging in metal music. It is presented as my final project for MUMT 621 Music Information Retrieval, and it consists of:
 
 * headbang: a Python library implementing beat tracking for fully mixed percussive metal songs
-    * `ConsensusBeatTracker` is  a beat-tracking ensemble algorithm that combines the outputs of 6 different beat trackers
+    * `ConsensusBeatTracker` is a beat-tracking ensemble algorithm that combines the outputs of 6 different beat trackers
     * `HeadbangBeatTracker` is a beat-tracking meta-algorithm that aligns the outputs of the consensus beat tracker with strong percussive onsets
 * headbang-beats: a Python tool for applying various configurations of the headbang beat tracking algorithms
 * headbang-hud: a Python tool which analyzes MP4 videos and uses 2D pose estimation to track head motion and headbang peaks to display alongside beat tracking results
@@ -20,7 +20,7 @@ Post any questions, concerns, or contributions via GitHub issues.
 
 # headbang-beats: beat tracking algorithms for fully-mixed prog metal
 
-The original motivation of `HeadbangBeatTracker` was to only predict beats that aligned with strong percussive onsets. The most common form of beat tracking output is overlaying clicks on the input audio track - in my opinion, it is very displeasing when the click is wrong. `HeadbangBeatTracker` is focused on eliminating false positives, and will output much fewer "strong beats" than the underlying beat trackers.
+The original motivation of `HeadbangBeatTracker` was to only predict strong beats that aligned with strong percussive onsets. The most common form of beat tracking output is overlaying clicks on the input audio track - in my opinion, it is very displeasing when the click is wrong. `HeadbangBeatTracker` is focused on eliminating false positives, and will output much fewer "strong beats" than the underlying beat trackers. The outputs are generally sparse (it will make fewer predictions, that tend to be more correct).
 
 For example, during a segment of the song where there is a lull and the drums are silent, there may be a silent/implicit beat, but `HeadbangBeatTracker` will not emit any clicks. The code has been tested mostly on prog metal and djent - Vitalism, Kadinja, Periphery, Anup Sastry, Meshuggah, Animals as Leaders, etc. As there are no ground truth annotations for such music, all of the testing and verification was done manually by yours truly, with some helper scripts - the workflow will be described later on.
 
@@ -220,6 +220,11 @@ Here's a table of some interesting outputs of headbang's algorithms:
       <td><a href="https://www.youtube.com/watch?v=8saKHKt1A5Q">Animals as Leaders - Lippincott</a></td>
       <td>{% include embed-audio.html src="lippincott_dbn.wav" %}</td>
       <td>{% include embed-audio.html src="lippincott_hbt.wav" %}</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.youtube.com/watch?v=24mT1lbt35I">Modern Day Babylon - Infinity</a></td>
+      <td>{% include embed-audio.html src="infinity_dbn.wav" %}</td>
+      <td>{% include embed-audio.html src="infinity_hbt.wav" %}</td>
     </tr>
   </tbody>
 </table>
