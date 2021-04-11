@@ -22,7 +22,9 @@ Post any questions, concerns, or contributions via GitHub issues.
 
 The original motivation of `HeadbangBeatTracker` was to only predict strong beats that aligned with strong percussive onsets. The most common form of beat tracking output is overlaying clicks on the input audio track - in my opinion, it is very displeasing when the click is wrong. `HeadbangBeatTracker` is focused on eliminating false positives, and will output much fewer "strong beats" than the underlying beat trackers. The outputs are generally sparse (it will make fewer predictions, that tend to be more correct).
 
-For example, during a segment of the song where there is a lull and the drums are silent, there may be a silent/implicit beat, but `HeadbangBeatTracker` will not emit any clicks. The code has been tested mostly on prog metal and djent - Vitalism, Kadinja, Periphery, Anup Sastry, Meshuggah, Animals as Leaders, etc. As there are no ground truth annotations for such music, all of the testing and verification was done manually by yours truly, with some helper scripts - the workflow will be described later on.
+For example, during a segment of the song where there is a lull and the drums are silent, there may be a silent/implicit beat, but `HeadbangBeatTracker` will not emit any clicks. The code has been tested mostly on prog metal and djent - Vitalism, Kadinja, Periphery, Anup Sastry, Meshuggah, Animals as Leaders, etc.
+
+As there are no ground truth annotations for such music, I did all of the testing and verification manually with some helper scripts - the workflow will be described later on. Additionally, I showed example audio clips with the headbang beat annotations to several friends and colleagues (ranging from professional musicians to MIR scientists).
 
 ## Block diagram
 
@@ -314,7 +316,7 @@ The goal of headbang-hud to analyze videos that contain metal music (e.g. metal 
 Here's a demo from a live [Periphery concert](https://www.youtube.com/watch?v=vlL-Q_IDOm8):
 {% include embed-video.html src="bloodeagle.mp4" %}
 
-The hypothesis is that certain parts of songs are so groovy that they impel either the musician or the audience (or both) to headbang on the beat. If these moments can be identified and displayed alongside MIR beat tracking, they could give us insight into the relation of headbanging to beats.
+The hypothesis is that certain parts of songs are so groovy that they impel either the musician or the audience (or both) to headbang on the beat. If these moments can be identified and displayed alongside MIR beat tracking, they could give us insight into the relation of headbanging to beats. This should be considered an interesting tool for further analysis - for its more serious use in research, we require datasets of clean video captures of headbanging motion with ground truth annotations, which don't exist as of yet.
 
 `headbang-hud` is a tool installed alongside `headbang-beats` as part of the overall [headbang.py](https://github.com/sevagh/headbang.py) project. Like `headbang-beats`, it is configurable through the command-line arguments:
 
