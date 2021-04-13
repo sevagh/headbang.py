@@ -67,7 +67,7 @@ def apply_single_beattracker(x, algo):
     return beats
 
 def apply_consensus(x):
-    all_algos = [1, 2, 3, 4, 5, 6, 7, 8]
+    all_algos = [1, 2, 3, 4, 5, 6]
     all_results = pool.starmap(
             apply_single_beattracker,
             zip(itertools.repeat(x), all_algos)
@@ -152,23 +152,23 @@ The useful tool is `headbang-beats`, which contains command-line arguments for e
 
 The full help text of `headbang-beats` displays the extent of configuration options:
 ```
-usage: headbang-beat-tool [-h] [--algorithms ALGORITHMS]
-                          [--onset-align-threshold-s ONSET_ALIGN_THRESHOLD_S]
-                          [--max-no-beats MAX_NO_BEATS]
-                          [--onset-near-threshold-s ONSET_NEAR_THRESHOLD_S]
-                          [--onset-silence-threshold ONSET_SILENCE_THRESHOLD]
-                          [--n-pool N_POOL] [--show-plots] [--disable-onsets]
-                          [--disable-transient-shaper] [--beats-out BEATS_OUT]
-                          [--harmonic-margin HARMONIC_MARGIN]
-                          [--harmonic-frame HARMONIC_FRAME]
-                          [--percussive-margin PERCUSSIVE_MARGIN]
-                          [--percussive-frame PERCUSSIVE_FRAME]
-                          [--fast-attack-ms FAST_ATTACK_MS]
-                          [--slow-attack-ms SLOW_ATTACK_MS]
-                          [--release-ms RELEASE_MS]
-                          [--power-memory-ms POWER_MEMORY_MS]
-                          [--filter-order FILTER_ORDER]
-                          wav_in wav_out
+usage: headbang-beats [-h] [--algorithms ALGORITHMS]
+                      [--onset-align-threshold-s ONSET_ALIGN_THRESHOLD_S]
+                      [--max-no-beats MAX_NO_BEATS]
+                      [--onset-near-threshold-s ONSET_NEAR_THRESHOLD_S]
+                      [--onset-silence-threshold ONSET_SILENCE_THRESHOLD]
+                      [--n-pool N_POOL] [--show-plots] [--disable-onsets]
+                      [--disable-transient-shaper] [--beats-out BEATS_OUT]
+                      [--harmonic-margin HARMONIC_MARGIN]
+                      [--harmonic-frame HARMONIC_FRAME]
+                      [--percussive-margin PERCUSSIVE_MARGIN]
+                      [--percussive-frame PERCUSSIVE_FRAME]
+                      [--fast-attack-ms FAST_ATTACK_MS]
+                      [--slow-attack-ms SLOW_ATTACK_MS]
+                      [--release-ms RELEASE_MS]
+                      [--power-memory-ms POWER_MEMORY_MS]
+                      [--filter-order FILTER_ORDER]
+                      wav_in wav_out
 ```
 
 For example, when I was evaluating different values for the harmonic frame size for HPSS, the evaluation could look something like this:
