@@ -1,0 +1,14 @@
+python-module/build
+unit-tests/Build
+xcuserdata
+.DS_Store
+
+*.o
+*.dylib
+
+*.xcworkspace
+
+modules-and-plug-ins/max-external/build
+modules-and-plug-ins/python-module/build
+modules-and-plug-ins/python-module/*.so
+modules-and-plug-ins/python-module/*.egg-info/

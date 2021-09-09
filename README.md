@@ -8,11 +8,11 @@ See more at https://sevagh.github.io/headbang.py
 
 headbang has been written and verified with Python 3.8 on an amd64 machine running Fedora 32 Linux. However, there shouldn't be any problems running it on different machines if the requirements can be successfully installed.
 
-The only sticking point is that the [BTrack](https://github.com/adamstark/BTrack) package is not on pip, and needs to be installed manually. My [fork](https://github.com/sevagh/BTrack) supports a Python 3.8 install:
+The only sticking point is that the [BTrack](https://github.com/adamstark/BTrack) package is not on pip, and needs to be installed manually. My [vendored copy](https://github.com/sevagh/headbang.py/tree/master/misc/vendor/BTrack) supports a Python 3.8 install:
 
 ```
-sevagh:~ $ git clone https://github.com/sevagh/BTrack
-sevagh:~ $ cd BTrack/modules-and-plug-ins/python-module
+sevagh:~ $ git clone https://github.com/sevagh/headbang.py
+sevagh:~ $ cd misc/vendor/BTrack/modules-and-plug-ins/python-module
 sevagh:python-module $ python3.8 setup.py build
 
 # install to your system
