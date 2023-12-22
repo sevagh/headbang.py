@@ -118,7 +118,7 @@ The parameters for the transient enhancer can be modified, but are not likely to
 * `power_memory_ms=1`
 * `filter_order=3`
 
-Reading through one of my previous projects, [multiband-transient-shaper](https://gitlab.com/sevagh/multiband-transient-shaper), or the [SPL design manual](https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf) should help shed some light on those parameters - or, if you have audio production/recording experience, you may recognize those parameters from dynamic range compressors/expanders/noise gates - but much of it was discovered through trial and error.
+Reading through one of my previous projects, [multiband-transient-shaper](https://github.com/sevagh/multiband-transient-shaper), or the [SPL design manual](https://spl.audio/wp-content/uploads/transient_designer_2_9946_manual.pdf) should help shed some light on those parameters - or, if you have audio production/recording experience, you may recognize those parameters from dynamic range compressors/expanders/noise gates - but much of it was discovered through trial and error.
 
 **Onset detection** is performed using a combination of 2 onset detection functions, HFC[[12]](#12), and RMS[[13]](#13) (from [Essentia](https://essentia.upf.edu/reference/streaming_OnsetDetection.html)), weighted most heavily on HFC for percussive event detection:
 
